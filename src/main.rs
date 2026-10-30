@@ -31,6 +31,6 @@ fn main() -> Result<()> {
         "show420" => hardware::show_420(false),
         #[cfg(feature = "hardware")]
         "show-prime420" => hardware::show_420(true),
-        _ => anyhow::bail!("Commands: verify | probe | show [image.jpg] | show-stream | dashboard | show420 | show-prime420. For hardware commands build with --features hardware."),
+        _ => anyhow::bail!("Commands: verify | probe | show [image.jpg] | show-stream | dashboard [image.jpg] | show420 | show-prime420 | desktop [frames] | kiosk frame.png. Hardware commands need --features hardware."),
     }
 }
