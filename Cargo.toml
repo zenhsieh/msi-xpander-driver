@@ -3,7 +3,7 @@ name = "msi-xpander"
 version = "0.1.0"
 edition = "2021"
 description = "Driver for the MSI Xpander USB companion display: HID handshake, JPEG 4:2:0 streaming, macOS desktop bridge, PNG kiosk"
-license = "MIT"
+license = "Apache-2.0"
 repository = "https://github.com/zenhsieh/msi-xpander-rust"
 readme = "README.md"
 

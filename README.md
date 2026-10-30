@@ -59,4 +59,4 @@ is the vendor's public key as shipped in the official software.
 
 ## License
 
-MIT — see `LICENSE`.
+Apache License 2.0 — see `LICENSE` and `NOTICE`.
