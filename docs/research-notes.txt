@@ -1,0 +1,49 @@
+MSI Xpander Rust research prototype v2
+
+STATUS
+Original Mac build: 10 tests passed; HID mode switch and RSA handshake succeeded; 193 JPEG writes succeeded but panel stayed black. A previous generic Windows Dashboard was produced while the official app had restarted and did not count as independent output.
+WINDOWS INDEPENDENT DASHBOARD OUTPUT IS NOW CONFIRMED. On 2026-10-29 at 22:49 +08:00, the separate C# Windows HID v2 diagnostic compiled and ran: all captured fixtures passed, four Dashboard commands returned ACK 200, and a unique baseline 1440x540 4:2:0 image was sent three times with no official display process restart detected. On 2026-10-30 the user confirmed seeing the expected physical image, including the test title, bars and run timestamp. No security settings or drivers were changed.
+Rust V2 source has NOT been compiled or hardware-tested. There is no Rust toolchain in the current Windows workspace. Windows success does not validate the Rust build or extended-mode streaming. The next step is Mac Dashboard output using the same HID startup and image framing.
+
+CHANGES
+- dashboard: vendor HID only, generated six-colour bars / gray ramp / checkerboard at 1440x540 baseline 4:2:0. Windows and Mac entry point. Windows checks both official display processes before sending.
+- show420: same extended-mode streaming sequence as show-stream, using explicit baseline JPEG 4:2:0.
+- show-prime420: first replay captured Dashboard startup and image, then switch to extended mode and stream the same 4:2:0 bars. Reconnect the panel between comparison runs.
+- Original show and show-stream remain available with the original image encoder for comparison.
+- New tests compare all 51 captured Dashboard reports, inspect official JPEG sampling, and decode startup/full-quality 4:2:0 frames at both supported resolutions.
+Changing the encoder also changes JPEG implementation details; this does not isolate chroma sampling alone. Dashboard priming also introduces timing and brightness writes. Neither is a proven fix yet.
+
+OFFLINE VALIDATION (no USB commands)
+cargo test
+cargo run -- verify
+cargo test --features hardware
+The last command compiles all hardware code but tests do not open USB devices. Cargo.lock was preserved from the original project; the new jpeg-encoder dependency requires lockfile resolution during the first Cargo command.
+
+WINDOWS FIRST
+The separate MSI-Windows-HID-Diagnostic-v2 folder uses the installed .NET Framework compiler, so no Rust/Node.js installation is required for this first check. The newly compiled C# v2 executable ran normally in the current session with Smart App Control still enabled. No security policy was changed; the difference from the earlier blocked executable is unexplained. See that folder's README and result logs for the Windows run.
+A Rust build can use: cargo run --release --features hardware -- dashboard
+This uses HIDAPI; it does not claim the Windows MSI bulk driver. Rust MSVC build tools and normal execution authorization are required. Extended-mode bulk sending remains restricted to macOS in this prototype.
+
+MAC LATER, AFTER WINDOWS VALIDATION
+Use a separate folder; do not overwrite the original Syncthing project.
+Recommended: connect the panel to the Mac, disconnect/reconnect its USB cable so it starts in default Dashboard mode, then run from this project folder:
+bash Run-Mac-Test.command
+The script compiles/tests the hardware feature, verifies captured fixtures, then sends the Dashboard colour bars / gray ramp / checkerboard. It writes a timestamped log next to this project folder for Syncthing to return to Windows. Confirm the physical panel image separately.
+For subsequent extended-mode comparisons, disconnect/reconnect the panel before each run, then use:
+bash Run-Mac-Test.command show420
+bash Run-Mac-Test.command show-prime420
+These are unvalidated experiments. Start with dashboard and report its physical result first.
+
+Equivalent manual commands:
+export CARGO_TARGET_DIR=/tmp/msi-xpander-target
+cargo test --features hardware
+cargo run --release --features hardware -- dashboard
+Disconnect/reconnect before each extended-mode test:
+cargo run --release --features hardware -- show420
+Disconnect/reconnect again, then:
+cargo run --release --features hardware -- show-prime420
+Record the physical image independently of host USB write results. These commands do not create a macOS virtual display.
+
+CONTENTS AND LIMITS
+assets/dashboard-prime.jpg is a captured generic MSI Dashboard, not a private desktop image. fixtures contain control frames, public RSA proof, Dashboard HID reports and JPEG headers. No USB serial numbers are included. No firmware, driver replacement or security settings are changed.
+Original source and Mac logs under Syncthing were left untouched.

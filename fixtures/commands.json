@@ -1,0 +1,52 @@
+[
+  {
+    "packet": 77,
+    "text": "POST conn 1\r\nSeqNumber=100\r\nContentType=json\r\n",
+    "wireHex": "5a0033504f535420636f6e6e20310d0a5365714e756d6265723d3130300d0a436f6e74656e74547970653d6a736f6e0d0ab15a"
+  },
+  {
+    "packet": 81,
+    "text": "POST conn 1\r\nSeqNumber=100\r\nContentType=json",
+    "wireHex": "5a0031504f535420636f6e6e20310d0a5365714e756d6265723d3130300d0a436f6e74656e74547970653d6a736f6e985a"
+  },
+  {
+    "packet": 85,
+    "text": "POST conn 1\r\nSeqNumber=100\r\nContentType=json",
+    "wireHex": "5a0031504f535420636f6e6e20310d0a5365714e756d6265723d3130300d0a436f6e74656e74547970653d6a736f6e985a"
+  },
+  {
+    "packet": 89,
+    "text": "POST power 1\r\nSeqNumber=114\r\nContentType=json\r\nContentLength=18\r\n\r\n{\"event\":\"resume\"}",
+    "wireHex": "5a005b01504f535420706f77657220310d0a5365714e756d6265723d3131340d0a436f6e74656e74547970653d6a736f6e0d0a436f6e74656e744c656e6774683d31380d0a0d0a7b226576656e74223a22726573756d65227dda5a"
+  },
+  {
+    "packet": 93,
+    "text": "POST conn 1\r\nSeqNumber=100\r\nContentType=json",
+    "wireHex": "5a0031504f535420636f6e6e20310d0a5365714e756d6265723d3130300d0a436f6e74656e74547970653d6a736f6e985a"
+  },
+  {
+    "packet": 97,
+    "text": "POST realtimeDisplay 1\r\nSeqNumber=112\r\nContentType=json\r\nContentLength=15\r\n\r\n{\"enable\":true}",
+    "wireHex": "5a0061504f5354207265616c74696d65446973706c617920310d0a5365714e756d6265723d3131320d0a436f6e74656e74547970653d6a736f6e0d0a436f6e74656e744c656e6774683d31350d0a0d0a7b22656e61626c65223a747275657d085a"
+  },
+  {
+    "packet": 101,
+    "text": "POST brightness 1\r\nSeqNumber=100\r\nContentType=json\r\nContentLength=12\r\n\r\n{\"value\":79}",
+    "wireHex": "5a0059504f5354206272696768746e65737320310d0a5365714e756d6265723d3130300d0a436f6e74656e74547970653d6a736f6e0d0a436f6e74656e744c656e6774683d31320d0a0d0a7b2276616c7565223a37397d705a"
+  },
+  {
+    "packet": 1019,
+    "text": "POST realtimeDisplay 1\r\nSeqNumber=112\r\nContentType=json\r\nContentLength=16\r\n\r\n{\"enable\":false}",
+    "wireHex": "5a0062504f5354207265616c74696d65446973706c617920310d0a5365714e756d6265723d3131320d0a436f6e74656e74547970653d6a736f6e0d0a436f6e74656e744c656e6774683d31360d0a0d0a7b22656e61626c65223a66616c73657d555a"
+  },
+  {
+    "packet": 1023,
+    "text": "POST extendedDisplay 1\r\nSeqNumber=110\r\nContentType=json\r\nContentLength=15\r\n\r\n{\"enable\":true}",
+    "wireHex": "5a0061504f535420657874656e646564446973706c617920310d0a5365714e756d6265723d3131300d0a436f6e74656e74547970653d6a736f6e0d0a436f6e74656e744c656e6774683d31350d0a0d0a7b22656e61626c65223a747275657d045a"
+  },
+  {
+    "packet": 1471,
+    "text": "POST conn 1\r\nSeqNumber=100\r\nContentType=json\r\n",
+    "wireHex": "5a0033504f535420636f6e6e20310d0a5365714e756d6265723d3130300d0a436f6e74656e74547970653d6a736f6e0d0ab15a"
+  }
+]

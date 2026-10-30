@@ -1,0 +1,7 @@
+/target/
+*.log
+.DS_Store
+.syncthing*
+*.tmp
+kiosk/frame.png
+kiosk/kiosk.env
