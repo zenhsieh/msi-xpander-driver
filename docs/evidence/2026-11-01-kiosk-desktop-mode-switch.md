@@ -17,6 +17,11 @@ The kiosk retains its 250 ms PNG polling, atomic-frame-source convention and
 second; HID's previous two-second retry delay remains unchanged. The current
 producer's last image can remain on the panel during the handoff.
 
+`MSI_KIOSK_JPEG_QUALITY` accepts 1–100 and defaults to the previous value 85.
+It is validated alongside the transport setting before opening USB. This controls
+only kiosk's existing Rust JPEG encoder; desktop/VideoToolbox quality is separate.
+Quality 100 remains baseline 4:2:0 with native 1920×720 kiosk frames.
+
 This switches content producers, not the firmware's USB mode. On an initial
 Dashboard-mode connection, bulk performs the captured **unprimed** forward
 transition. Normal desktop/bulk-kiosk startup does not send
@@ -64,10 +69,12 @@ resetting the device.
 
 ## Validation
 
-`cargo test --features hardware`: **24 passed**, zero failures (11 library,
-10 binary, 3 integration). `cargo build --release --features hardware` succeeds.
+`cargo test --features hardware`: **25 passed**, zero failures (11 library,
+11 binary, 3 integration). `cargo build --release --features hardware` succeeds.
 Physical handoff measurements are recorded separately by the coordinating agent.
 Existing desktop bulk tests already cover JPEG payload and
 sequence preservation, short-write failure and new-session sequence restart.
 A new kiosk setting test checks the default HID choice, bulk selection and
 invalid-value errors before any connection is attempted.
+The quality test covers the unchanged default, valid/invalid bounds, and a
+decodable baseline 4:2:0 JPEG at quality 100.

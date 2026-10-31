@@ -58,7 +58,7 @@ Use bulk for both producers and stop the current producer before starting the
 other. For example (the kiosk PNG must already exist):
 
 ```sh
-MSI_KIOSK_TRANSPORT=bulk cargo run --release --features hardware -- kiosk kiosk/frame.png
+MSI_KIOSK_TRANSPORT=bulk MSI_KIOSK_JPEG_QUALITY=100 cargo run --release --features hardware -- kiosk kiosk/frame.png
 # Stop with Ctrl-C, then start the desktop:
 MSI_DESKTOP_TRANSPORT=bulk MSI_DESKTOP_FPS=60 bash Run-Desktop.command
 # Stop with Ctrl-C, then restart the bulk kiosk command above.
@@ -77,6 +77,12 @@ its 250 ms PNG polling and 5-second static-image resend remain unchanged. An
 existing HID-only background kiosk must be stopped before testing bulk desktop.
 This feature switches the image producer while keeping the firmware in the same
 mode; a reverse extended-to-Dashboard firmware command has not been established.
+
+Bulk kiosk sends the PNG at native 1920×720 as baseline JPEG 4:2:0. Set
+`MSI_KIOSK_JPEG_QUALITY` from 1 to 100 to tune its JPEG detail/size; the default is
+85, preserving previous kiosk output. This quality setting belongs to kiosk's
+existing Rust encoder. It is independent of the desktop bridge's VideoToolbox
+encoder/quality controls, and does not enable VT encoding for kiosk frames.
 
 ## Build
 
