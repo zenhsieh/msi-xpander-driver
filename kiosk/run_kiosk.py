@@ -91,27 +91,23 @@ def ago(seconds):
     return f"{seconds}s ago" if seconds < 60 else f"{seconds // 60}m ago" if seconds < 3600 else f"{seconds // 3600}h ago"
 
 
-def draw_clock(image, now, received_at):
-    """Live local clock in the top-right 56 px band: `<age> <date> <time>`.
+def draw_clock(image, now):
+    """Live local clock in the top-right 56 px band: `<date> <time>`.
 
     It ticks every second on the panel side, independent of how long the frame
-    command takes; the age tells how old the underlying picture is. The frame
+    command takes (the picture's age is in the footer, after RECEIVED). The frame
     source should leave that corner empty (the reference renderer has --no-clock).
     """
     draw = ImageDraw.Draw(image)
     stamp = time.localtime(now)
-    big, mid, small = font(40, MONO_CANDIDATES), font(24, MONO_CANDIDATES), font(17, MONO_CANDIDATES)
+    big, mid = font(40, MONO_CANDIDATES), font(24, MONO_CANDIDATES)
     clock, day = time.strftime("%H:%M:%S", stamp), time.strftime("%Y-%m-%d", stamp)
     edge = SIZE[0] - 28
     day_edge = edge - draw.textlength(clock, font=big) - 24
-    age_edge = day_edge - draw.textlength(day, font=mid) - 24
-    draw.rectangle((age_edge - 110, 4, SIZE[0] - 1, 52), fill=image.getpixel((SIZE[0] - 2, 2)))
+    draw.rectangle((day_edge - draw.textlength(day, font=mid) - 12, 4, SIZE[0] - 1, 52),
+                   fill=image.getpixel((SIZE[0] - 2, 2)))
     draw.text((edge, 28), clock, font=big, anchor="rm", fill=(234, 241, 250))
     draw.text((day_edge, 28), day, font=mid, anchor="rm", fill=(147, 167, 191))
-    if received_at is not None:
-        age = now - received_at
-        tone = (147, 167, 191) if age <= 20 else (242, 194, 104) if age <= 60 else (239, 100, 100)
-        draw.text((age_edge, 29), ago(age), font=small, anchor="rm", fill=tone)
     return image
 
 
@@ -164,8 +160,9 @@ def compose(feed, label, clock, now):
     elif now - success_at > 20:
         frame = annotate(image, f"STALE DATA  /  REFRESH IN PROGRESS  /  LAST RECEIVED {int(now - success_at)}s AGO", True)
     else:
-        frame = annotate(image, f"{label} CONNECTED  /  RECEIVED {time.strftime('%H:%M:%S', time.localtime(success_at))}")
-    return draw_clock(frame, now, success_at) if clock else frame
+        frame = annotate(image, f"{label} CONNECTED  /  RECEIVED "
+                                f"{time.strftime('%H:%M:%S', time.localtime(success_at))} · {ago(now - success_at)}")
+    return draw_clock(frame, now) if clock else frame
 
 
 def main():
