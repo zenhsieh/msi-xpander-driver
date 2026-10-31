@@ -74,6 +74,38 @@ static CVPixelBufferRef gradient(void) {
     return pixel;
 }
 
+// JPEG (HW) does not implement UsingHardwareAcceleratedVideoEncoder on this
+// runtime. Match the session's actual EncoderID to Apple's public encoder list.
+static BOOL registryHardware(VTCompressionSessionRef session, const char *stage) {
+    CFTypeRef identifier = NULL;
+    OSStatus status = VTSessionCopyProperty(session, kVTCompressionPropertyKey_EncoderID,
+        kCFAllocatorDefault, &identifier);
+    if (status != noErr || !identifier || CFGetTypeID(identifier) != CFStringGetTypeID()) {
+        printf("%s EncoderID unavailable status=%d\n", stage, status);
+        if (identifier) CFRelease(identifier);
+        return NO;
+    }
+    CFArrayRef list = NULL;
+    status = VTCopyVideoEncoderList(NULL, &list);
+    BOOL hardware = NO;
+    if (status == noErr && list) {
+        for (NSDictionary *entry in (__bridge NSArray *)list) {
+            id candidate = entry[(__bridge id)kVTVideoEncoderList_EncoderID];
+            if (candidate && CFEqual((__bridge CFTypeRef)candidate, identifier)) {
+                id flag = entry[(__bridge id)kVTVideoEncoderList_IsHardwareAccelerated];
+                hardware = flag && CFEqual((__bridge CFTypeRef)flag, kCFBooleanTrue);
+                printf("%s EncoderID=%s registry_hardware=%s\n", stage,
+                    [(__bridge NSString *)identifier UTF8String],
+                    flag ? hardware ? "true" : "false" : "unavailable");
+                break;
+            }
+        }
+    }
+    if (list) CFRelease(list);
+    CFRelease(identifier);
+    return hardware;
+}
+
 static int probe(CVPixelBufferRef pixel, double quality, BOOL save) {
     VTCompressionSessionRef session = NULL;
     NSDictionary *spec = @{(id)kVTVideoEncoderSpecification_RequireHardwareAcceleratedVideoEncoder:@YES};
@@ -109,10 +141,9 @@ static int probe(CVPixelBufferRef pixel, double quality, BOOL save) {
         goto done;
     }
     if (!hardware) {
-        // Retain RequireHardware=true. Collect format/performance evidence, but
-        // do not claim that session creation proves hardware use when this
-        // runtime cannot attest the hardware property.
-        printf("Hardware attestation unavailable; collecting JPEG evidence with the unchanged required-hardware session\n");
+        hardware = registryHardware(session, "Before encode");
+        printf("Hardware verification via actual EncoderID and encoder registry: %s\n",
+            hardware ? "confirmed" : "unverified");
     }
     double totalMs = 0;
     size_t totalBytes = 0, minimum = SIZE_MAX, maximum = 0;
@@ -150,6 +181,8 @@ static int probe(CVPixelBufferRef pixel, double quality, BOOL save) {
     }
     printf("frames=100 mean_encode_ms=%.3f mean_bytes=%.1f min_bytes=%zu max_bytes=%zu quality=%.2f\n",
            totalMs/100, totalBytes/100.0, minimum, maximum, quality);
+    // Confirm the actual encoder again after successful frame callbacks.
+    hardware = hardware && registryHardware(session, "After encode");
     result = hardware ? 0 : 3;
 done:
     if (property) CFRelease(property);

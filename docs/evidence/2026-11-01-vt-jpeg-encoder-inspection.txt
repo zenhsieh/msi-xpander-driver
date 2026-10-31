@@ -1,0 +1,45 @@
+VTCopyVideoEncoderList status=0
+JPEG encoder=com.apple.videotoolbox.videoencoder.jpeg name=Apple JPEG hardware=not-listed
+JPEG encoder=com.apple.videotoolbox.videoencoder.jpeg.ajpeg name=JPEG (HW) hardware=1
+
+CASE JPEG default
+selection_status=0 selected_encoder=com.apple.videotoolbox.videoencoder.jpeg.ajpeg supports_hardware_query=no
+session_create_status=0
+prepare_status=0
+EncoderID status=0 value=com.apple.videotoolbox.videoencoder.jpeg.ajpeg
+UsingHardwareAcceleratedVideoEncoder status=-12900 value=unavailable
+
+CASE JPEG require hardware
+selection_status=0 selected_encoder=com.apple.videotoolbox.videoencoder.jpeg.ajpeg supports_hardware_query=no
+session_create_status=0
+prepare_status=0
+EncoderID status=0 value=com.apple.videotoolbox.videoencoder.jpeg.ajpeg
+UsingHardwareAcceleratedVideoEncoder status=-12900 value=unavailable
+
+CASE JPEG disable hardware
+selection_status=0 selected_encoder=com.apple.videotoolbox.videoencoder.jpeg supports_hardware_query=no
+session_create_status=0
+prepare_status=0
+EncoderID status=0 value=com.apple.videotoolbox.videoencoder.jpeg
+UsingHardwareAcceleratedVideoEncoder status=-12900 value=unavailable
+
+CASE JPEG explicit ID com.apple.videotoolbox.videoencoder.jpeg
+selection_status=0 selected_encoder=com.apple.videotoolbox.videoencoder.jpeg supports_hardware_query=no
+session_create_status=0
+prepare_status=0
+EncoderID status=0 value=com.apple.videotoolbox.videoencoder.jpeg
+UsingHardwareAcceleratedVideoEncoder status=-12900 value=unavailable
+
+CASE JPEG explicit ID com.apple.videotoolbox.videoencoder.jpeg.ajpeg
+selection_status=0 selected_encoder=com.apple.videotoolbox.videoencoder.jpeg.ajpeg supports_hardware_query=no
+session_create_status=0
+prepare_status=0
+EncoderID status=0 value=com.apple.videotoolbox.videoencoder.jpeg.ajpeg
+UsingHardwareAcceleratedVideoEncoder status=-12900 value=unavailable
+
+CASE H264 require hardware (query control)
+selection_status=0 selected_encoder=com.apple.videotoolbox.videoencoder.ave.avc supports_hardware_query=yes
+session_create_status=0
+prepare_status=0
+EncoderID status=0 value=com.apple.videotoolbox.videoencoder.ave.avc
+UsingHardwareAcceleratedVideoEncoder status=0 value=1

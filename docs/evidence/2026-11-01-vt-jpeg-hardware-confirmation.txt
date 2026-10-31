@@ -1,0 +1,30 @@
+VT hardware JPEG spike: default/selected quality=0.75; 100 frames per quality
+quality=0.75 codec=jpeg dimensions=1920x720 input=32BGRA require_hardware=true
+VTCompressionSessionCreate status=0
+Set quality status=0
+Prepare frames status=0
+UsingHardwareAcceleratedVideoEncoder=unavailable property_status=-12900
+Before encode EncoderID=com.apple.videotoolbox.videoencoder.jpeg.ajpeg registry_hardware=true
+Hardware verification via actual EncoderID and encoder registry: confirmed
+Saved /tmp/vt-probe.jpg at quality=0.75
+frames=100 mean_encode_ms=1.226 mean_bytes=72982.0 min_bytes=72982 max_bytes=72982 quality=0.75
+After encode EncoderID=com.apple.videotoolbox.videoencoder.jpeg.ajpeg registry_hardware=true
+quality=0.60 codec=jpeg dimensions=1920x720 input=32BGRA require_hardware=true
+VTCompressionSessionCreate status=0
+Set quality status=0
+Prepare frames status=0
+UsingHardwareAcceleratedVideoEncoder=unavailable property_status=-12900
+Before encode EncoderID=com.apple.videotoolbox.videoencoder.jpeg.ajpeg registry_hardware=true
+Hardware verification via actual EncoderID and encoder registry: confirmed
+frames=100 mean_encode_ms=1.162 mean_bytes=72982.0 min_bytes=72982 max_bytes=72982 quality=0.60
+After encode EncoderID=com.apple.videotoolbox.videoencoder.jpeg.ajpeg registry_hardware=true
+quality=0.90 codec=jpeg dimensions=1920x720 input=32BGRA require_hardware=true
+VTCompressionSessionCreate status=0
+Set quality status=0
+Prepare frames status=0
+UsingHardwareAcceleratedVideoEncoder=unavailable property_status=-12900
+Before encode EncoderID=com.apple.videotoolbox.videoencoder.jpeg.ajpeg registry_hardware=true
+Hardware verification via actual EncoderID and encoder registry: confirmed
+frames=100 mean_encode_ms=1.491 mean_bytes=152108.0 min_bytes=152108 max_bytes=152108 quality=0.90
+After encode EncoderID=com.apple.videotoolbox.videoencoder.jpeg.ajpeg registry_hardware=true
+Probe exit code: 0
