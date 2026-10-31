@@ -311,6 +311,7 @@ pub fn desktop(helper: Option<&Path>) -> Result<()> {
     };
     let first_frame = read_frame(&mut input)?;
     crate::desktop_frame::decode(&first_frame)?;
+    let bridge_jpeg = first_frame.starts_with(b"JPEG");
     let jpeg_quality:u8=std::env::var("MSI_DESKTOP_JPEG_QUALITY").unwrap_or_else(|_| "55".into()).parse().context("Invalid MSI_DESKTOP_JPEG_QUALITY")?;
     ensure!((20..=95).contains(&jpeg_quality), "JPEG quality must be between 20 and 95");
     // Drain capture continuously into one replaceable slot. A slow USB frame
@@ -362,7 +363,12 @@ pub fn desktop(helper: Option<&Path>) -> Result<()> {
     if let Some(pacer) = &pacer {
         eprintln!("Bulk frame pacing: {:.2} fps; regular-quality first frame (no quality-1 startup frame)", 1.0 / pacer.period.as_secs_f64());
     }
-    eprintln!("Live JPEG quality: {jpeg_quality}; native output dimensions retained");
+    if bridge_jpeg {
+        eprintln!("Live JPEG quality: VT {} (bridge JPEG passthrough); native output dimensions retained",
+            std::env::var("MSI_VT_QUALITY").unwrap_or_else(|_| "0.75".into()));
+    } else {
+        eprintln!("Live JPEG quality: {jpeg_quality}; native output dimensions retained");
+    }
     loop {
         if device.is_some() {
             // Pace before taking the latest slot so waiting never ages an
