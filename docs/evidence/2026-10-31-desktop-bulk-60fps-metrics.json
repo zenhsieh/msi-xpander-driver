@@ -1,0 +1,43 @@
+{
+  "transport": "bulk",
+  "fps_ceiling": 60,
+  "quality": 55,
+  "active_seconds": 60.05,
+  "last_logged_frames": 2400,
+  "last_cumulative_fps_includes_startup": 35.79,
+  "recent_fps": {
+    "min": 16.77,
+    "median": 49.94,
+    "mean": 43.863416666666666,
+    "max": 56.27
+  },
+  "jpeg_bytes": {
+    "min": 36956.0,
+    "median": 107492.0,
+    "mean": 105507.63636363637,
+    "max": 130382.0
+  },
+  "capture_to_send_age_ms": {
+    "min": 10.269,
+    "median": 20.648,
+    "mean": 21.237752066115704,
+    "max": 69.988
+  },
+  "jpeg_worker_ms": {
+    "min": 5.1,
+    "median": 6.2,
+    "mean": 6.653333333333333,
+    "max": 14.2
+  },
+  "usb_ms": {
+    "min": 1.1,
+    "median": 2.8,
+    "mean": 2.7025,
+    "max": 3.8
+  },
+  "initial_dropped": 191,
+  "last_dropped_cumulative_includes_startup": 408,
+  "usb_interruptions": 0,
+  "reconnect_pending": 0,
+  "cursor_impression": "User: 更流暢，差異明顯 (noticeably smoother than bulk30fps). No black screen/freeze was reported."
+}

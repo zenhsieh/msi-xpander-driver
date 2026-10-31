@@ -7,6 +7,83 @@ use std::{path::Path, thread, time::{Duration, Instant}};
 
 const TIMEOUT: Duration = Duration::from_secs(5);
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum DesktopTransportKind { Hid, Bulk }
+
+impl DesktopTransportKind {
+    fn parse(value: Option<&str>) -> Result<Self> {
+        match value.unwrap_or("hid") {
+            "hid" => Ok(Self::Hid),
+            "bulk" => Ok(Self::Bulk),
+            other => bail!("MSI_DESKTOP_TRANSPORT must be hid or bulk, got {other:?}"),
+        }
+    }
+
+    fn retry_delay(self) -> Duration {
+        Duration::from_secs(if self == Self::Bulk { 1 } else { 2 })
+    }
+}
+
+fn bulk_frame_period(fps: Option<&str>) -> Result<Duration> {
+    let fps: f64 = fps.unwrap_or("30").parse().context("Invalid MSI_DESKTOP_FPS")?;
+    ensure!(fps.is_finite() && (1.0..=60.0).contains(&fps), "MSI_DESKTOP_FPS must be between 1 and 60");
+    Ok(Duration::from_secs_f64(1.0 / fps))
+}
+
+/// Schedule the next frame from the actual send start, never burst to catch up.
+struct SendPacer { period: Duration, next: Instant }
+impl SendPacer {
+    fn new(period: Duration, now: Instant) -> Self { Self { period, next: now } }
+    fn delay(&self, now: Instant) -> Duration { self.next.saturating_duration_since(now) }
+    fn sent_at(&mut self, start: Instant) { self.next = start + self.period; }
+}
+
+/// Each authenticated bulk session starts the image sequence at the captured base.
+struct BulkFrames<T: Transport> { io: T, sequence: u32 }
+impl<T: Transport> BulkFrames<T> {
+    fn new(io: T) -> Self { Self { io, sequence: 0x100000 } }
+    fn send(&mut self, jpeg: &[u8]) -> Result<()> {
+        send_jpeg(&mut self.io, jpeg, self.sequence)
+            .with_context(|| format!("Send live bulk frame sequence {:#x}", self.sequence))?;
+        self.sequence = self.sequence.checked_add(1).context("Bulk image sequence exhausted")?;
+        Ok(())
+    }
+}
+
+enum DesktopUsb { Hid(HidDevice), Bulk(BulkFrames<UsbTransport>) }
+
+fn connect_desktop(kind: DesktopTransportKind) -> Result<DesktopUsb> {
+    match kind {
+        DesktopTransportKind::Hid => Ok(DesktopUsb::Hid(connect_dashboard()?)),
+        DesktopTransportKind::Bulk => {
+            let context = Context::new().context("Initialize desktop bulk USB")?;
+            // switch_to_extended returns immediately for PID 7885. Only a panel
+            // that returned as PID 7920 gets Dashboard priming and a mode switch.
+            switch_to_extended(&context, false, true)?;
+            let mut transport = open_display(&context)?;
+            authenticate(&mut transport, &mut |stage| eprintln!("{stage}"))?;
+            eprintln!("Bulk USB session ready/reconnected; first desktop JPEG uses regular quality, sequence 0x100000");
+            Ok(DesktopUsb::Bulk(BulkFrames::new(transport)))
+        }
+    }
+}
+
+impl DesktopUsb {
+    fn send(&mut self, jpeg: &[u8], report_delay_us: u64) -> Result<()> {
+        match self {
+            Self::Hid(connected) => {
+                for report in dashboard_image_reports(jpeg)? {
+                    let written = connected.write(&report).context("Send live Dashboard frame")?;
+                    ensure!(written == 1024 || written == 1025, "Short live Dashboard write: {written}");
+                    if report_delay_us > 0 { thread::sleep(Duration::from_micros(report_delay_us)); }
+                }
+                Ok(())
+            }
+            Self::Bulk(transport) => transport.send(jpeg),
+        }
+    }
+}
+
 fn matching(context: &Context, pid: u16) -> Result<Vec<Device<Context>>> {
     let mut result = Vec::new();
     for device in context.devices()?.iter() {
@@ -208,8 +285,20 @@ pub fn desktop(helper: Option<&Path>) -> Result<()> {
     ensure!(cfg!(target_os="macos"), "Desktop bridge requires macOS");
     let default = std::path::PathBuf::from(std::env::var("HOME")?)
         .join("Applications/MSI Xpander Desktop.app/Contents/MacOS/MSIXpanderDesktop");
-    let mut bridge = DesktopBridge(std::process::Command::new(helper.unwrap_or(&default))
-        .stdout(std::process::Stdio::piped()).spawn().context("Start macOS desktop bridge (build with bash macos/build-bridge.sh)")?);
+    let transport_env = std::env::var("MSI_DESKTOP_TRANSPORT").ok();
+    let transport_kind = DesktopTransportKind::parse(transport_env.as_deref())?;
+    let fps_env = std::env::var("MSI_DESKTOP_FPS").ok();
+    let mut pacer = if transport_kind == DesktopTransportKind::Bulk {
+        Some(SendPacer::new(bulk_frame_period(fps_env.as_deref())?, Instant::now()))
+    } else { None };
+    let mut helper_command = std::process::Command::new(helper.unwrap_or(&default));
+    if transport_kind == DesktopTransportKind::Bulk && fps_env.is_none() {
+        // Match the bulk send ceiling in the capture process, leaving HID's
+        // existing default and environment handling unchanged.
+        helper_command.env("MSI_DESKTOP_FPS", "30");
+    }
+    let mut bridge = DesktopBridge(helper_command.stdout(std::process::Stdio::piped())
+        .spawn().context("Start macOS desktop bridge (build with bash macos/build-bridge.sh)")?);
     let mut input = bridge.0.stdout.take().context("Open desktop frame pipe")?;
     // Read one frame before touching USB: a missing screen-recording permission
     // or virtual-display failure must not alter the panel's mode.
@@ -260,7 +349,7 @@ pub fn desktop(helper: Option<&Path>) -> Result<()> {
             slot=ready.wait(slot).unwrap();
         }
     };
-    let mut device:Option<HidDevice>=None;
+    let mut device:Option<DesktopUsb>=None;
     let mut usb_epoch=None;
     let mut retry_after=Instant::now();
     let start = Instant::now(); let mut count = 0u64;
@@ -269,8 +358,17 @@ pub fn desktop(helper: Option<&Path>) -> Result<()> {
     let mut timing = Instant::now();
     let mut encode_ms=0.0; let mut usb_ms=0.0; let mut batch=0u32;
     eprintln!("Live transport pacing: {report_delay_us} microseconds per report");
+    eprintln!("Live desktop transport: {}", if transport_kind == DesktopTransportKind::Bulk { "bulk" } else { "hid (default/fallback)" });
+    if let Some(pacer) = &pacer {
+        eprintln!("Bulk frame pacing: {:.2} fps; regular-quality first frame (no quality-1 startup frame)", 1.0 / pacer.period.as_secs_f64());
+    }
     eprintln!("Live JPEG quality: {jpeg_quality}; native output dimensions retained");
     loop {
+        if device.is_some() {
+            // Pace before taking the latest slot so waiting never ages an
+            // already selected frame, and capture can keep replacing old frames.
+            if let Some(pacer) = &pacer { thread::sleep(pacer.delay(Instant::now())); }
+        }
         let (frame,dropped)=next_frame()?;
         let EncodedFrame {jpeg,captured_at,epoch,dimensions,encode_ms:work_ms}=frame;
         if epoch!=usb_epoch {
@@ -279,10 +377,16 @@ pub fn desktop(helper: Option<&Path>) -> Result<()> {
         }
         if device.is_none() {
             if Instant::now()<retry_after {thread::sleep(Duration::from_millis(100));continue;}
-            retry_after=Instant::now()+Duration::from_secs(2);
-            match connect_dashboard() {
-                Ok(connected)=> { device=Some(connected); timing=Instant::now(); batch=0; encode_ms=0.0; usb_ms=0.0; }
-                Err(error)=> eprintln!("USB reconnect pending; virtual display retained: {error:#}"),
+            retry_after=Instant::now()+transport_kind.retry_delay();
+            match connect_desktop(transport_kind) {
+                Ok(connected)=> {
+                    device=Some(connected); timing=Instant::now(); batch=0; encode_ms=0.0; usb_ms=0.0;
+                    if let Some(pacer) = &mut pacer { pacer.next = Instant::now(); }
+                }
+                Err(error)=> {
+                    eprintln!("USB reconnect pending; virtual display retained: {error:#}");
+                    if transport_kind == DesktopTransportKind::Bulk { retry_after=Instant::now()+Duration::from_secs(1); }
+                }
             }
             // Initialization takes several seconds: send the newest frame next.
             continue;
@@ -290,19 +394,12 @@ pub fn desktop(helper: Option<&Path>) -> Result<()> {
         if count==0 {eprintln!("Captured desktop output: {}x{} pixels; JPEG worker overlaps USB sending",dimensions.0,dimensions.1);}
         encode_ms+=work_ms;
         let stage=Instant::now();
-        let sent=(||->Result<()> {
-            let connected=device.as_ref().context("USB session unavailable")?;
-            for report in dashboard_image_reports(&jpeg)? {
-                let written=connected.write(&report).context("Send live Dashboard frame")?;
-                ensure!(written==1024 || written==1025,"Short live Dashboard write: {written}");
-                if report_delay_us>0 {thread::sleep(Duration::from_micros(report_delay_us));}
-            }
-            Ok(())
-        })();
+        let sent=device.as_mut().context("USB session unavailable")?.send(&jpeg,report_delay_us);
         if let Err(error)=sent {
             eprintln!("USB session interrupted; retaining virtual desktop and retrying: {error:#}");
             device=None; retry_after=Instant::now()+Duration::from_secs(1); continue;
         }
+        if let Some(pacer) = &mut pacer { pacer.sent_at(stage); }
         count+=1;
         usb_ms+=stage.elapsed().as_secs_f64()*1000.0; batch+=1;
         if count==1 || count%20==0 {
@@ -409,4 +506,72 @@ fn show_internal(path: Option<&Path>, diagnostic: bool, use_420: bool, prime: bo
     println!("Two JPEG frames transferred. Check the panel for colour bars, gray ramp and checkerboard.");
     println!("This is an image-output prototype; no macOS virtual desktop has been created.");
     Ok(())
+}
+
+#[cfg(test)]
+mod desktop_bulk_tests {
+    use super::*;
+
+    #[derive(Default)]
+    struct RecordingUsb { writes: Vec<Vec<u8>>, short_at: Option<usize> }
+    impl Transport for RecordingUsb {
+        fn control_read(&mut self, _:u8, _:u8, _:u16, _:u16, _: &mut [u8]) -> Result<usize> { panic!("Unexpected control read") }
+        fn control_write(&mut self, _:u8, _:u8, _:u16, _:u16, _: &[u8]) -> Result<usize> { panic!("Unexpected control write") }
+        fn bulk_in(&mut self, _: &mut [u8]) -> Result<usize> { panic!("Unexpected bulk read") }
+        fn bulk_out(&mut self, data: &[u8]) -> Result<usize> {
+            self.writes.push(data.to_vec());
+            Ok(if self.short_at == Some(self.writes.len()) { data.len()-1 } else { data.len() })
+        }
+    }
+
+    #[test]
+    fn bulk_frames_preserve_jpeg_and_increment_wire_sequence() {
+        let jpeg = include_bytes!("../assets/dashboard-prime.jpg");
+        let mut stream = BulkFrames::new(RecordingUsb::default());
+        stream.send(jpeg).unwrap();
+        stream.send(jpeg).unwrap();
+        assert_eq!(stream.io.writes, vec![
+            msi_xpander::packet_header(1, jpeg.len() as u32, 0x100000).to_vec(), jpeg.to_vec(),
+            msi_xpander::packet_header(1, jpeg.len() as u32, 0x100001).to_vec(), jpeg.to_vec(),
+        ]);
+    }
+
+    #[test]
+    fn failed_bulk_payload_stops_frame_and_new_session_restarts_sequence() {
+        let jpeg = include_bytes!("../assets/dashboard-prime.jpg");
+        let mut failed = BulkFrames::new(RecordingUsb { short_at: Some(2), ..Default::default() });
+        assert!(failed.send(jpeg).is_err());
+        assert_eq!(failed.io.writes.len(), 2);
+        assert_eq!(failed.sequence, 0x100000);
+        let mut reconnected = BulkFrames::new(RecordingUsb::default());
+        reconnected.send(jpeg).unwrap();
+        assert_eq!(&reconnected.io.writes[0][8..12], &0x100000u32.to_le_bytes());
+    }
+
+    #[test]
+    fn transport_and_frame_rate_settings_reject_unknown_or_unsafe_values() {
+        assert_eq!(DesktopTransportKind::parse(None).unwrap(), DesktopTransportKind::Hid);
+        assert_eq!(DesktopTransportKind::parse(Some("bulk")).unwrap(), DesktopTransportKind::Bulk);
+        assert!(DesktopTransportKind::parse(Some("automatic")).is_err());
+        assert_eq!(bulk_frame_period(None).unwrap(), Duration::from_secs_f64(1.0/30.0));
+        for fps in ["0", "61", "NaN", "inf", "bad"] { assert!(bulk_frame_period(Some(fps)).is_err()); }
+        assert_eq!(DesktopTransportKind::Bulk.retry_delay(), Duration::from_secs(1));
+        assert_eq!(DesktopTransportKind::Hid.retry_delay(), Duration::from_secs(2));
+    }
+
+    #[test]
+    fn frame_pacing_spaces_sends_without_bursts_after_a_stall() {
+        for fps in ["30", "60"] {
+            let period = bulk_frame_period(Some(fps)).unwrap();
+            let now = Instant::now();
+            let mut pacer = SendPacer::new(period, now);
+            assert_eq!(pacer.delay(now), Duration::ZERO);
+            pacer.sent_at(now);
+            assert_eq!(pacer.delay(now + period/4), period-period/4);
+            let after_stall = now + Duration::from_secs(2);
+            assert_eq!(pacer.delay(after_stall), Duration::ZERO);
+            pacer.sent_at(after_stall);
+            assert_eq!(pacer.delay(after_stall), period);
+        }
+    }
 }

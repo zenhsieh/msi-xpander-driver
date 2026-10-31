@@ -16,8 +16,8 @@ exact validation status of each path.
 |---|---|
 | HID mode switch + RSA vendor handshake | confirmed on macOS and Windows |
 | Dashboard mode (vendor HID, 1440×540 baseline JPEG 4:2:0) | confirmed, physical output verified |
-| macOS extended desktop (`desktop`, ScreenCaptureKit bridge) | works at 1920×720 through the Dashboard HID channel; cursor motion is less smooth than with the official Windows software |
-| Extended-mode bulk streaming (`show420`, `show-prime420`) | confirmed on the panel 2026-10-31 (`docs/evidence/2026-10-31-mac-bulk-works.md`); desktop over bulk in progress |
+| macOS extended desktop (`desktop`, ScreenCaptureKit bridge) | Dashboard HID remains the default/fallback; opt-in bulk desktop confirmed on the panel 2026-10-31 at 30/60 fps ceilings, with visibly smoother cursor motion ([evidence](docs/evidence/2026-10-31-desktop-bulk.md)) |
+| Extended-mode bulk streaming (`show420`, `show-prime420`) | confirmed on the panel 2026-10-31 (`docs/evidence/2026-10-31-mac-bulk-works.md`); desktop transport now selectable with `MSI_DESKTOP_TRANSPORT` |
 | Kiosk mode (`kiosk frame.png`, any PNG source) | works; see `kiosk/README.md` |
 
 ## Why the cursor is not as smooth as on Windows
@@ -28,8 +28,16 @@ roughly 100 HID reports of 1000 bytes each. Each frame must be sent again when
 the picture changes, so cursor motion can lag or look less fluid. The official
 Windows software also sends full JPEG frames (about 100–200 KB each, no separate
 cursor channel; see `docs/evidence/2026-10-31-windows-mouse-capture.md`), but over
-the extended mode's bulk endpoint at a steady rate. Extended bulk streaming in
-this project is still experimental; finishing it is the whole gap.
+the extended mode's bulk endpoint at a steady rate. This project now offers
+paced bulk desktop sending as an option; capture/encode cost and physical cursor
+smoothness still need to be compared at 30 and 60 fps.
+
+Select `MSI_DESKTOP_TRANSPORT=bulk` to use that bulk endpoint for desktop frames.
+The first real desktop frame uses the configured JPEG quality, without a separate
+quality-1 startup image. A freshly connected Dashboard-mode panel is primed and
+switched once; reconnecting an already extended-mode panel only reopens and
+authenticates the bulk session. Each new session starts frame sequence `0x100000`.
+HID remains the default and can be selected explicitly with `MSI_DESKTOP_TRANSPORT=hid`.
 
 These settings can help tune the current desktop path:
 
@@ -37,9 +45,12 @@ These settings can help tune the current desktop path:
 |---|---|
 | `MSI_DESKTOP_MODE=native` | Use a 1920×720 display mode without HiDPI backing; it can reduce capture and encoding work. |
 | `MSI_DESKTOP_JPEG_QUALITY` | Lower quality reduces JPEG size and HID traffic, at the cost of image detail (20–95; default 55). |
-| `MSI_DESKTOP_FPS` | Lower the capture ceiling to reduce work and bandwidth pressure, at the cost of fewer visual updates (1–60; default 60). |
+| `MSI_DESKTOP_TRANSPORT` | `hid` is the default/fallback; `bulk` enables the extended-mode endpoint. |
+| `MSI_DESKTOP_FPS` | Capture ceiling (1–60; HID default 60, bulk default 30). Bulk also spaces send starts at this ceiling and selects the latest frame after waiting, without catch-up bursts. |
 
-Roadmap: complete the extended bulk protocol and use it for desktop frames.
+Bulk write failures drop the session and retry after one second. The latest-frame
+capture slot keeps updating while USB is unavailable; recovery does not queue old
+frames or automatically switch transports.
 
 ## Build
 
@@ -59,6 +70,8 @@ Connect the panel, unplug/replug once so it starts in Dashboard mode, then:
 cargo run --release --features hardware -- dashboard      # colour bars / gray ramp / checkerboard
 cargo run --release --features hardware -- show420        # extended-mode stream (experimental)
 cargo run --release --features hardware -- desktop        # macOS: extra display, see macos/
+MSI_DESKTOP_TRANSPORT=bulk MSI_DESKTOP_FPS=30 bash Run-Desktop.command
+MSI_DESKTOP_TRANSPORT=bulk MSI_DESKTOP_FPS=60 bash Run-Desktop.command
 cargo run --release --features hardware -- kiosk frame.png
 ```
 

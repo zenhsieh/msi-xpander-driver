@@ -1,0 +1,39 @@
+{
+  "quality": 35,
+  "last_logged_frames": 1820,
+  "last_cumulative_fps_includes_startup": 27.59,
+  "recent_fps": {
+    "min": 14.87,
+    "median": 34.17,
+    "mean": 33.137582417582415,
+    "max": 62.24
+  },
+  "jpeg_bytes": {
+    "min": 82972.0,
+    "median": 95090.5,
+    "mean": 93225.14130434782,
+    "max": 100729.0
+  },
+  "capture_to_send_age_ms": {
+    "min": 18.644,
+    "median": 42.983000000000004,
+    "mean": 43.88073913043478,
+    "max": 150.354
+  },
+  "jpeg_worker_ms": {
+    "min": 4.9,
+    "median": 5.3,
+    "mean": 5.545054945054945,
+    "max": 8.1
+  },
+  "usb_ms": {
+    "min": 12.4,
+    "median": 26.6,
+    "mean": 26.00989010989011,
+    "max": 32.5
+  },
+  "last_dropped_cumulative_includes_startup": 883,
+  "initial_dropped": 104,
+  "active_duration_s": 60.17,
+  "cursor_impression": "User selected improvement / smoother, adding 「但差異超小」 (slightly improved; very small difference)."
+}
