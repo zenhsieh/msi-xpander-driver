@@ -17,7 +17,7 @@ exact validation status of each path.
 | HID mode switch + RSA vendor handshake | confirmed on macOS and Windows |
 | Dashboard mode (vendor HID, 1440×540 baseline JPEG 4:2:0) | confirmed, physical output verified |
 | macOS extended desktop (`desktop`, ScreenCaptureKit bridge) | works at 1920×720 through the Dashboard HID channel; cursor motion is less smooth than with the official Windows software |
-| Extended-mode bulk streaming (`show420`, `show-prime420`) | experimental, macOS only; not yet the desktop transport |
+| Extended-mode bulk streaming (`show420`, `show-prime420`) | confirmed on the panel 2026-10-31 (`docs/evidence/2026-10-31-mac-bulk-works.md`); desktop over bulk in progress |
 | Kiosk mode (`kiosk frame.png`, any PNG source) | works; see `kiosk/README.md` |
 
 ## Why the cursor is not as smooth as on Windows
