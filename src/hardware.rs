@@ -34,6 +34,12 @@ fn bulk_frame_period(fps: Option<&str>) -> Result<Duration> {
     Ok(Duration::from_secs_f64(1.0 / fps))
 }
 
+fn kiosk_jpeg_quality(value: Option<&str>) -> Result<u8> {
+    let quality: u8 = value.unwrap_or("85").parse().context("Invalid MSI_KIOSK_JPEG_QUALITY")?;
+    ensure!((1..=100).contains(&quality), "MSI_KIOSK_JPEG_QUALITY must be between 1 and 100");
+    Ok(quality)
+}
+
 /// Schedule the next frame from the actual send start, never burst to catch up.
 struct SendPacer { period: Duration, next: Instant }
 impl SendPacer {
@@ -255,7 +261,10 @@ fn connect_dashboard() -> Result<HidDevice> {
 pub fn kiosk(path: &Path) -> Result<()> {
     let transport_env = std::env::var("MSI_KIOSK_TRANSPORT").ok();
     let transport_kind = DesktopTransportKind::parse_setting(transport_env.as_deref(), "MSI_KIOSK_TRANSPORT")?;
+    let quality_env = std::env::var("MSI_KIOSK_JPEG_QUALITY").ok();
+    let quality = kiosk_jpeg_quality(quality_env.as_deref())?;
     eprintln!("Kiosk transport: {}", if transport_kind == DesktopTransportKind::Bulk { "bulk" } else { "hid (default/fallback)" });
+    eprintln!("Kiosk JPEG quality: {quality}; native 1920x720 baseline 4:2:0, Rust encoder");
     let mut device = None;
     let mut previous = Vec::new();
     let mut last_send = Instant::now();
@@ -266,7 +275,7 @@ pub fn kiosk(path: &Path) -> Result<()> {
             if png == previous && last_send.elapsed() < Duration::from_secs(5) { return Ok(()); }
             let image = image::load_from_memory(&png).context("Decode kiosk PNG")?;
             ensure!(image.width() == 1920 && image.height() == 720, "Kiosk image must be 1920x720");
-            let jpeg = crate::jpeg420::encode(&image, 85)?;
+            let jpeg = crate::jpeg420::encode(&image, quality)?;
             if device.is_none() { device = Some(connect_desktop(transport_kind)?); }
             let started = Instant::now();
             device.as_mut().unwrap().send(&jpeg, 0)?;
@@ -576,6 +585,19 @@ mod desktop_bulk_tests {
         assert_eq!(DesktopTransportKind::parse_setting(Some("bulk"), "MSI_KIOSK_TRANSPORT").unwrap(), DesktopTransportKind::Bulk);
         let error = DesktopTransportKind::parse_setting(Some("automatic"), "MSI_KIOSK_TRANSPORT").unwrap_err();
         assert!(error.to_string().contains("MSI_KIOSK_TRANSPORT must be hid or bulk"));
+    }
+
+    #[test]
+    fn kiosk_quality_preserves_default_and_accepts_baseline_420_at_maximum() {
+        assert_eq!(kiosk_jpeg_quality(None).unwrap(), 85);
+        for value in ["1", "85", "100"] { assert_eq!(kiosk_jpeg_quality(Some(value)).unwrap().to_string(), value); }
+        for value in ["0", "101", "256", "-1", "NaN", ""] { assert!(kiosk_jpeg_quality(Some(value)).is_err()); }
+        let image = DynamicImage::ImageRgb8(RgbImage::from_fn(64,32,|x,y| Rgb([(x*4) as u8,(y*8) as u8,125])));
+        let jpeg = crate::jpeg420::encode(&image, kiosk_jpeg_quality(Some("100")).unwrap()).unwrap();
+        let profile = jpeg_profile(&jpeg).unwrap();
+        assert_eq!((profile.width,profile.height),(64,32));
+        assert_eq!(profile.sampling,vec![0x22,0x11,0x11]);
+        assert!(image::load_from_memory(&jpeg).is_ok());
     }
 
     #[test]

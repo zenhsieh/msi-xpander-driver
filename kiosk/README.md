@@ -22,6 +22,10 @@ well.
 
 Behaviour:
 
+- `MSI_KIOSK_TRANSPORT=bulk` sends native 1920×720 JPEGs over the extended-mode
+  endpoint; the default remains `hid`. `MSI_KIOSK_JPEG_QUALITY` accepts 1–100
+  (default 85); use 100 for higher-detail low-frequency dashboards. Kiosk uses the
+  Rust software JPEG encoder, independently of any VideoToolbox desktop setting.
 - Frames are fetched on a background thread, targeting `--interval` seconds
   (default 5); a slow frame command simply lowers the refresh rate.
 - The panel itself is republished every second, independent of fetching. The
@@ -30,8 +34,9 @@ Behaviour:
 - The footer reads `RECEIVED hh:mm:ss · Ns ago`, the age ticking every second.
 - `--clock` (or `KIOSK_CLOCK=1`) draws a live `<date> <time>` clock top-right.
   Have the frame command leave that 56 px corner empty.
-- On USB failure the sender reopens and primes the panel, then resends the latest
-  file. Static images are resent every 5 s as a reconnect check.
+- On USB failure the sender reopens the selected transport and resends the latest
+  file. HID primes the panel; bulk reauthenticates without replaying a Dashboard
+  startup image. Static images are resent every 5 s as a reconnect check.
 - `kiosk/kiosk.env` (git-ignored) is sourced by `Run-Kiosk.command` if present,
   so the frame command and target dir can live outside the repo.
 
