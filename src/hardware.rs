@@ -238,7 +238,9 @@ pub fn desktop(helper: Option<&Path>) -> Result<()> {
             let frame=if let Some(frame)=first.take() { frame } else { read_frame(&mut input)? };
             let stage=Instant::now();
             let (jpeg,captured_at,dimensions)=crate::desktop_frame::encode(&frame,jpeg_quality)?;
-            Ok(EncodedFrame {jpeg,captured_at,epoch:crate::desktop_frame::capture_epoch(&frame),dimensions,encode_ms:stage.elapsed().as_secs_f64()*1000.0})
+            let encode_ms=crate::desktop_frame::bridge_encode_ms(&frame)
+                .unwrap_or_else(|| stage.elapsed().as_secs_f64()*1000.0);
+            Ok(EncodedFrame {jpeg,captured_at,epoch:crate::desktop_frame::capture_epoch(&frame),dimensions,encode_ms})
         })();
         let (lock,ready)=&*receiver;
         let mut slot=lock.lock().unwrap();
