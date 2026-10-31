@@ -1,7 +1,7 @@
 #import <AppKit/AppKit.h>
 #include <math.h>
 
-@interface XpanderMenuController : NSObject <NSApplicationDelegate>
+@interface XpanderMenuController : NSObject <NSApplicationDelegate, NSMenuDelegate>
 @property(nonatomic, strong) NSStatusItem *statusItem;
 @property(nonatomic, strong) NSMenuItem *statusHeader;
 @property(nonatomic, strong) NSMenuItem *errorHeader;
@@ -19,6 +19,9 @@
 @property(nonatomic, strong) dispatch_queue_t commands;
 @property(nonatomic, copy) NSString *currentAction;
 @property(nonatomic) BOOL busy;
+@property(nonatomic) BOOL statusPending;
+@property(nonatomic) BOOL menuTracking;
+@property(nonatomic) NSUInteger commandGeneration;
 @property(nonatomic) BOOL terminationPending;
 @property(nonatomic) BOOL readyToQuit;
 @end
@@ -101,6 +104,7 @@
 
     NSMenu *menu=[[NSMenu alloc] initWithTitle:@"MSI Xpander"];
     menu.autoenablesItems=NO;
+    menu.delegate=self;
     self.statusHeader=[[NSMenuItem alloc] initWithTitle:@"讀取狀態中…" action:nil keyEquivalent:@""];
     self.statusHeader.enabled=NO;
     [menu addItem:self.statusHeader];
@@ -147,13 +151,13 @@
     [self runAction:@"resume" value:nil terminating:NO];
     self.pollTimer=[NSTimer timerWithTimeInterval:2 repeats:YES block:^(NSTimer *timer) {
         (void)timer;
-        if (!self.busy && !self.terminationPending) [self runAction:@"status" value:nil terminating:NO];
+        [self requestStatus];
     }];
     [NSRunLoop.mainRunLoop addTimer:self.pollTimer forMode:NSRunLoopCommonModes];
 }
 
 - (void)refreshMenu {
-    BOOL transition=self.terminationPending || (self.busy && ![self.currentAction isEqualToString:@"status"]);
+    BOOL transition=self.terminationPending || self.busy;
     NSString *title=transition ? [self operationTitle] : [NSString stringWithFormat:@"目前模式：%@",[self modeTitle]];
     self.statusHeader.title=title;
     self.statusItem.button.toolTip=[NSString stringWithFormat:@"MSI Xpander — %@",title];
@@ -205,11 +209,8 @@
     [alert runModal];
 }
 
-- (void)runAction:(NSString *)action value:(NSString *)value terminating:(BOOL)terminating {
-    if (self.busy) return;
-    self.busy=YES;
-    self.currentAction=action;
-    [self refreshMenu];
+- (void)executeControllerAction:(NSString *)action value:(NSString *)value
+                    completion:(void (^)(NSDictionary *,NSString *,BOOL))completion {
     dispatch_async(self.commands, ^{
         NSDictionary *response=nil;
         NSString *error=nil;
@@ -242,29 +243,80 @@
             }
         }
         dispatch_async(dispatch_get_main_queue(), ^{
-            NSMutableDictionary *updated=[self.state mutableCopy] ?: [NSMutableDictionary dictionary];
-            if (response) [updated addEntriesFromDictionary:response];
-            if (error) updated[@"last_error"]=error;
-            self.state=updated;
-            self.busy=NO;
-            self.currentAction=nil;
-            [self refreshMenu];
-            if (terminating) {
-                if (ok) {
-                    self.readyToQuit=YES;
-                    [NSApp replyToApplicationShouldTerminate:YES];
-                } else {
-                    self.terminationPending=NO;
-                    [NSApp replyToApplicationShouldTerminate:NO];
-                    [self refreshMenu];
-                    [self showError:error];
-                }
-            } else {
-                if (!ok && ![action isEqualToString:@"status"]) [self showError:error];
-                if (self.terminationPending) [self beginTerminationIfIdle];
-            }
+            completion(response,error,ok);
         });
     });
+}
+
+- (BOOL)updateState:(NSDictionary *)response error:(NSString *)error {
+    NSMutableDictionary *updated=[self.state mutableCopy] ?: [NSMutableDictionary dictionary];
+    // Ignore backend fields that have no visual representation (for example a
+    // timestamp or process counter) so they cannot cause periodic menu redraws.
+    for (NSString *key in @[@"mode",@"desktop_fps",@"desktop_quality",@"kiosk_quality",
+                            @"launch_at_login",@"test_window",@"last_error",@"logs_path"]) {
+        id value=response[key];
+        if (value==NSNull.null) [updated removeObjectForKey:key];
+        else if (value) updated[key]=value;
+    }
+    if (error) updated[@"last_error"]=error;
+    if ([self.state isEqualToDictionary:updated]) return NO;
+    self.state=updated;
+    return YES;
+}
+
+- (void)requestStatus {
+    if (self.statusPending || self.busy || self.terminationPending || self.menuTracking) return;
+    self.statusPending=YES;
+    NSUInteger generation=self.commandGeneration;
+    [self executeControllerAction:@"status" value:nil completion:^(NSDictionary *response,NSString *error,BOOL ok) {
+        (void)ok;
+        self.statusPending=NO;
+        // A click is allowed while a passive query runs. Its command is queued
+        // serially and invalidates this older reply, even if it already finished.
+        if (self.busy || self.terminationPending || self.menuTracking || generation!=self.commandGeneration) return;
+        if ([self updateState:response error:error]) [self refreshMenu];
+    }];
+}
+
+- (void)menuWillOpen:(NSMenu *)menu {
+    (void)menu;
+    self.menuTracking=YES;
+}
+
+- (void)menuDidClose:(NSMenu *)menu {
+    (void)menu;
+    self.menuTracking=NO;
+}
+
+- (void)runAction:(NSString *)action value:(NSString *)value terminating:(BOOL)terminating {
+    if ([action isEqualToString:@"status"]) { [self requestStatus]; return; }
+    if (self.busy) return;
+    self.busy=YES;
+    self.currentAction=action;
+    self.commandGeneration++;
+    [self refreshMenu];
+    [self executeControllerAction:action value:value completion:^(NSDictionary *response,NSString *error,BOOL ok) {
+        [self updateState:response error:error];
+        self.busy=NO;
+        self.currentAction=nil;
+        // Mutating operations must re-enable controls even when the returned
+        // settings are identical; passive status queries never toggle them.
+        [self refreshMenu];
+        if (terminating) {
+            if (ok) {
+                self.readyToQuit=YES;
+                [NSApp replyToApplicationShouldTerminate:YES];
+            } else {
+                self.terminationPending=NO;
+                [NSApp replyToApplicationShouldTerminate:NO];
+                [self refreshMenu];
+                [self showError:error];
+            }
+        } else {
+            if (!ok) [self showError:error];
+            if (self.terminationPending) [self beginTerminationIfIdle];
+        }
+    }];
 }
 
 - (void)openLogs:(id)sender {
