@@ -180,7 +180,7 @@ def main():
     if not args.frame_cmd:
         parser.error("--frame-cmd (or KIOSK_FRAME_CMD) is required, e.g. 'ssh myhost render-dashboard'")
     words = shlex.split(args.frame_cmd)
-    # `ssh <host> …` ⇒ name the host (NAGI CONNECTED), otherwise the command's basename.
+    # For an SSH command, use its host as the label; otherwise use the command name.
     hosts = [w for w in words[1:] if not w.startswith("-")] if Path(words[0]).name == "ssh" else []
     label = (hosts[0].split("@")[-1] if hosts else Path(words[0]).name).upper()
 

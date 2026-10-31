@@ -1,0 +1,11 @@
+{
+  "token_usage": {
+    "today": 12450,
+    "month": 286300
+  },
+  "sessions": [
+    {"name": "SESSION A", "context": 32768},
+    {"name": "SESSION B", "context": 18432},
+    {"name": "SESSION C", "context": 4096}
+  ]
+}
