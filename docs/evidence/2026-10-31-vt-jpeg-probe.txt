@@ -1,0 +1,25 @@
+VT hardware JPEG spike: default/selected quality=0.75; 100 frames per quality
+quality=0.75 codec=jpeg dimensions=1920x720 input=32BGRA require_hardware=true
+VTCompressionSessionCreate status=0
+Set quality status=0
+Prepare frames status=0
+UsingHardwareAcceleratedVideoEncoder=unavailable property_status=-12900
+Hardware attestation unavailable; collecting JPEG evidence with the unchanged required-hardware session
+Saved /tmp/vt-probe.jpg at quality=0.75
+frames=100 mean_encode_ms=1.325 mean_bytes=72982.0 min_bytes=72982 max_bytes=72982 quality=0.75
+quality=0.60 codec=jpeg dimensions=1920x720 input=32BGRA require_hardware=true
+VTCompressionSessionCreate status=0
+Set quality status=0
+Prepare frames status=0
+UsingHardwareAcceleratedVideoEncoder=unavailable property_status=-12900
+Hardware attestation unavailable; collecting JPEG evidence with the unchanged required-hardware session
+frames=100 mean_encode_ms=1.167 mean_bytes=72982.0 min_bytes=72982 max_bytes=72982 quality=0.60
+quality=0.90 codec=jpeg dimensions=1920x720 input=32BGRA require_hardware=true
+VTCompressionSessionCreate status=0
+Set quality status=0
+Prepare frames status=0
+UsingHardwareAcceleratedVideoEncoder=unavailable property_status=-12900
+Hardware attestation unavailable; collecting JPEG evidence with the unchanged required-hardware session
+frames=100 mean_encode_ms=1.281 mean_bytes=152108.0 min_bytes=152108 max_bytes=152108 quality=0.90
+RESULT: STOP integration; JPEG benchmarks complete but hardware flag remains unverified
+Probe exit code: 2
