@@ -1,0 +1,13 @@
+VTImageEncoder: before encode EncoderID=com.apple.videotoolbox.videoencoder.jpeg.ajpeg registry_hardware=true property_status=0
+VTImageEncoder: after encode EncoderID=com.apple.videotoolbox.videoencoder.jpeg.ajpeg registry_hardware=true property_status=0
+VTImageEncoder: quality=1.000 dimensions=1920x720 jpeg_bytes=33081 encode_ms=11.874
+VTImageEncoder: before encode EncoderID=com.apple.videotoolbox.videoencoder.jpeg.ajpeg registry_hardware=true property_status=0
+VTImageEncoder: after encode EncoderID=com.apple.videotoolbox.videoencoder.jpeg.ajpeg registry_hardware=true property_status=0
+VTImageEncoder: quality=0.750 dimensions=1920x720 jpeg_bytes=29440 encode_ms=11.005
+VTImageEncoder: before encode EncoderID=com.apple.videotoolbox.videoencoder.jpeg.ajpeg registry_hardware=true property_status=0
+VTImageEncoder: after encode EncoderID=com.apple.videotoolbox.videoencoder.jpeg.ajpeg registry_hardware=true property_status=0
+VTImageEncoder: quality=0.900 dimensions=1920x720 jpeg_bytes=31263 encode_ms=11.678
+PASS: default quality=0.75; malformed quality, wrong-size and missing inputs reject with empty stdout.
+PASS: PNG ImageIO sniffing works without any filename extension (root tempfile input).
+Strict compile (-Wall -Wextra -Werror): PASS, no warnings.
+clang static analyzer: PASS, no diagnostics.
