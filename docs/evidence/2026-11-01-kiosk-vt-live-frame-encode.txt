@@ -1,0 +1,4 @@
+VTImageEncoder: before encode EncoderID=com.apple.videotoolbox.videoencoder.jpeg.ajpeg registry_hardware=true property_status=0
+VTImageEncoder: after encode EncoderID=com.apple.videotoolbox.videoencoder.jpeg.ajpeg registry_hardware=true property_status=0
+VTImageEncoder: quality=1.000 dimensions=1920x720 jpeg_bytes=573472 encode_ms=12.763
+width=1920 height=720 sampling=22 11 11 progressive=no baseline=yes

@@ -40,6 +40,68 @@ fn kiosk_jpeg_quality(value: Option<&str>) -> Result<u8> {
     Ok(quality)
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum KioskEncoderKind { Raw, Vt }
+
+fn kiosk_encoder(value: Option<&str>) -> Result<KioskEncoderKind> {
+    match value.unwrap_or("raw") {
+        "raw" => Ok(KioskEncoderKind::Raw),
+        "vt" => Ok(KioskEncoderKind::Vt),
+        _ => bail!("MSI_KIOSK_ENCODER must be raw or vt"),
+    }
+}
+
+fn vt_quality(value: Option<&str>) -> Result<f64> {
+    let quality: f64 = value.unwrap_or("0.75").parse().context("Invalid MSI_VT_QUALITY")?;
+    ensure!(quality.is_finite() && (0.0..=1.0).contains(&quality), "MSI_VT_QUALITY must be between 0 and 1");
+    Ok(quality)
+}
+
+fn validate_kiosk_jpeg(bytes: &[u8]) -> Result<()> {
+    ensure!(bytes.len() <= 16*1024*1024 && bytes.ends_with(&[0xff, 0xd9]), "Incomplete or oversized kiosk JPEG");
+    let profile = jpeg_profile(bytes)?;
+    ensure!((profile.width, profile.height) == (1920, 720) && profile.sampling == [0x22, 0x11, 0x11],
+            "Kiosk VT JPEG must be 1920x720 baseline 4:2:0, sampling 22 11 11");
+    Ok(())
+}
+
+fn encode_kiosk_vt(helper: &Path, png: &[u8], quality: f64) -> Result<Vec<u8>> {
+    use std::io::{Read, Seek, SeekFrom, Write};
+    use std::process::{Command, Stdio};
+    // Spool into private temporary files: no pipe deadlock and no frame file
+    // race with the supervisor's atomic PNG replacement. No shell is involved.
+    let mut input = tempfile::NamedTempFile::new()?;
+    input.write_all(png)?;
+    input.flush()?;
+    let mut output = tempfile::tempfile()?;
+    let mut errors = tempfile::tempfile()?;
+    let mut child = Command::new(helper).arg(input.path()).arg(quality.to_string())
+        .stdin(Stdio::null()).stdout(output.try_clone()?).stderr(errors.try_clone()?)
+        .spawn().context("Start kiosk VT image encoder")?;
+    let deadline = Instant::now() + Duration::from_secs(10);
+    let status = loop {
+        match child.try_wait() {
+            Ok(Some(status)) => break status,
+            Ok(None) if Instant::now() < deadline => thread::sleep(Duration::from_millis(5)),
+            outcome => {
+                let _ = child.kill(); let _ = child.wait();
+                if let Err(error) = outcome { return Err(error).context("Wait for kiosk VT encoder"); }
+                bail!("Kiosk VT encoder exceeded 10 seconds");
+            }
+        }
+    };
+    errors.seek(SeekFrom::Start(0))?;
+    let mut diagnostic = String::new();
+    errors.take(4096).read_to_string(&mut diagnostic)?;
+    ensure!(status.success(), "Kiosk VT encoder failed: {status}; {}", diagnostic.trim());
+    if !diagnostic.trim().is_empty() { eprintln!("{}", diagnostic.trim()); }
+    output.seek(SeekFrom::Start(0))?;
+    let mut jpeg = Vec::new();
+    output.take(16*1024*1024+1).read_to_end(&mut jpeg)?;
+    validate_kiosk_jpeg(&jpeg)?;
+    Ok(jpeg)
+}
+
 /// Schedule the next frame from the actual send start, never burst to catch up.
 struct SendPacer { period: Duration, next: Instant }
 impl SendPacer {
@@ -263,8 +325,24 @@ pub fn kiosk(path: &Path) -> Result<()> {
     let transport_kind = DesktopTransportKind::parse_setting(transport_env.as_deref(), "MSI_KIOSK_TRANSPORT")?;
     let quality_env = std::env::var("MSI_KIOSK_JPEG_QUALITY").ok();
     let quality = kiosk_jpeg_quality(quality_env.as_deref())?;
+    let encoder = kiosk_encoder(std::env::var("MSI_KIOSK_ENCODER").ok().as_deref())?;
+    let mut vt_setting = 0.75;
+    let mut vt_helper = std::path::PathBuf::new();
+    if encoder == KioskEncoderKind::Vt {
+        ensure!(cfg!(target_os="macos"), "Kiosk VT JPEG requires macOS");
+        vt_setting = vt_quality(std::env::var("MSI_VT_QUALITY").ok().as_deref())?;
+        vt_helper = match std::env::var_os("MSI_KIOSK_VT_HELPER") {
+            Some(path) => path.into(),
+            None => std::path::PathBuf::from(std::env::var("HOME")?)
+                .join("Library/Application Support/digiter-xpander-kiosk/VTImageEncoder"),
+        };
+        ensure!(vt_helper.is_file(), "Kiosk VT helper missing: {}", vt_helper.display());
+    }
+    eprintln!("Kiosk JPEG encoder: {:?}; VT quality={vt_setting}", encoder);
     eprintln!("Kiosk transport: {}", if transport_kind == DesktopTransportKind::Bulk { "bulk" } else { "hid (default/fallback)" });
-    eprintln!("Kiosk JPEG quality: {quality}; native 1920x720 baseline 4:2:0, Rust encoder");
+    if encoder == KioskEncoderKind::Raw {
+        eprintln!("Kiosk JPEG quality: {quality}; native 1920x720 baseline 4:2:0, Rust encoder");
+    }
     let mut device = None;
     let mut previous = Vec::new();
     let mut last_send = Instant::now();
@@ -275,11 +353,16 @@ pub fn kiosk(path: &Path) -> Result<()> {
             if png == previous && last_send.elapsed() < Duration::from_secs(5) { return Ok(()); }
             let image = image::load_from_memory(&png).context("Decode kiosk PNG")?;
             ensure!(image.width() == 1920 && image.height() == 720, "Kiosk image must be 1920x720");
-            let jpeg = crate::jpeg420::encode(&image, quality)?;
+            let encode_started = Instant::now();
+            let jpeg = match encoder {
+                KioskEncoderKind::Raw => crate::jpeg420::encode(&image, quality)?,
+                KioskEncoderKind::Vt => encode_kiosk_vt(&vt_helper, &png, vt_setting)?,
+            };
+            let encode_ms = encode_started.elapsed().as_secs_f64()*1000.0;
             if device.is_none() { device = Some(connect_desktop(transport_kind)?); }
             let started = Instant::now();
             device.as_mut().unwrap().send(&jpeg, 0)?;
-            eprintln!("Kiosk 1920x720: {} JPEG bytes; USB {:.1}ms", jpeg.len(), started.elapsed().as_secs_f64()*1000.0);
+            eprintln!("Kiosk 1920x720: {} JPEG bytes; USB {:.1}ms; encode pipeline {:.1}ms; encoder={encoder:?}", jpeg.len(), started.elapsed().as_secs_f64()*1000.0, encode_ms);
             previous = png;
             last_send = Instant::now();
             Ok(())
@@ -531,6 +614,53 @@ fn show_internal(path: Option<&Path>, diagnostic: bool, use_420: bool, prime: bo
 #[cfg(test)]
 mod desktop_bulk_tests {
     use super::*;
+
+    #[test]
+    fn kiosk_encoder_settings_validate_before_opening_usb() {
+        assert_eq!(kiosk_encoder(None).unwrap(), KioskEncoderKind::Raw);
+        assert_eq!(kiosk_encoder(Some("vt")).unwrap(), KioskEncoderKind::Vt);
+        assert!(kiosk_encoder(Some("automatic")).is_err());
+        assert_eq!(vt_quality(None).unwrap(), 0.75);
+        assert_eq!(vt_quality(Some("1")).unwrap(), 1.0);
+        for setting in ["-1", "1.01", "NaN", "inf", "bad"] {
+            assert!(vt_quality(Some(setting)).is_err());
+        }
+    }
+
+    #[test]
+    fn kiosk_rejects_incompatible_helper_output_before_usb() {
+        let source = DynamicImage::ImageRgb8(RgbImage::new(1920, 720));
+        let good = crate::jpeg420::encode(&source, 100).unwrap();
+        validate_kiosk_jpeg(&good).unwrap();
+        assert!(validate_kiosk_jpeg(include_bytes!("../assets/dashboard-prime.jpg")).is_err());
+        let sof = good.windows(2).position(|m| m == [0xff, 0xc0]).unwrap();
+        for (offset, value) in [(1, 0xc2), (4, 12), (11, 0x21)] {
+            let mut bad = good.clone(); bad[sof+offset] = value;
+            assert!(validate_kiosk_jpeg(&bad).is_err());
+        }
+        assert!(validate_kiosk_jpeg(&good[..good.len()-2]).is_err());
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn kiosk_helper_spools_large_output_and_propagates_failure() {
+        use std::io::Write;
+        use std::os::unix::fs::PermissionsExt;
+        let dir = tempfile::tempdir().unwrap();
+        let jpeg_path = dir.path().join("fixture.jpg");
+        let source = DynamicImage::ImageRgb8(RgbImage::from_fn(1920, 720,
+            |x,y| Rgb([(x%251) as u8,(y%251) as u8,127])));
+        let expected = crate::jpeg420::encode(&source, 100).unwrap();
+        std::fs::write(&jpeg_path, &expected).unwrap();
+        let helper = dir.path().join("helper");
+        let mut script = std::fs::File::create(&helper).unwrap();
+        writeln!(script, "#!/bin/sh\ncat '{}'", jpeg_path.display()).unwrap();
+        drop(script);
+        std::fs::set_permissions(&helper, std::fs::Permissions::from_mode(0o700)).unwrap();
+        assert_eq!(encode_kiosk_vt(&helper, b"input fixture", 1.0).unwrap(), expected);
+        std::fs::write(&helper, "#!/bin/sh\necho 'encoder fixture failed' >&2\nexit 2\n").unwrap();
+        assert!(encode_kiosk_vt(&helper, b"input", 0.75).unwrap_err().to_string().contains("encoder fixture failed"));
+    }
 
     #[derive(Default)]
     struct RecordingUsb { writes: Vec<Vec<u8>>, short_at: Option<usize> }
