@@ -9,7 +9,7 @@ readme = "README.md"
 
 [features]
 default = []
-hardware = ["dep:hidapi", "dep:rusb", "dep:image", "dep:jpeg-encoder"]
+hardware = ["dep:hidapi", "dep:rusb", "dep:image", "dep:jpeg-encoder", "dep:tempfile"]
 
 [dependencies]
 anyhow = "1"
@@ -21,3 +21,4 @@ rusb = { version = "0.9.4", features = ["vendored"], optional = true }
 image = { version = "0.25", default-features = false, features = ["jpeg", "png"], optional = true }
 
 jpeg-encoder = { version = "0.7.1", optional = true }
+tempfile = { version = "3", optional = true }
