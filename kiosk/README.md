@@ -22,10 +22,14 @@ well.
 
 Behaviour:
 
-- Frames are fetched sequentially, targeting `--interval` seconds (default 5);
-  a slow frame command simply lowers the refresh rate.
-- The footer shows receipt time; after 20 s without a new frame a stale banner is
+- Frames are fetched on a background thread, targeting `--interval` seconds
+  (default 5); a slow frame command simply lowers the refresh rate.
+- The panel itself is republished every second, independent of fetching. The
+  footer shows receipt time; after 20 s without a new frame a stale banner is
   drawn over the last known image, and fetch failures are shown immediately.
+- `--clock` (or `KIOSK_CLOCK=1`) draws a live clock top-right: `<age> <date> <time>`,
+  where the age says how old the picture is (grey, amber after 20 s, red after 60 s).
+  Have the frame command leave that 56 px corner empty.
 - On USB failure the sender reopens and primes the panel, then resends the latest
   file. Static images are resent every 5 s as a reconnect check.
 - `kiosk/kiosk.env` (git-ignored) is sourced by `Run-Kiosk.command` if present,
