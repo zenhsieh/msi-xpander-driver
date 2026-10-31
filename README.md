@@ -26,8 +26,10 @@ The current macOS desktop path captures and encodes each full frame as JPEG,
 then sends it over the Dashboard HID channel. A typical frame is about 100 KB:
 roughly 100 HID reports of 1000 bytes each. Each frame must be sent again when
 the picture changes, so cursor motion can lag or look less fluid. The official
-Windows software uses the extended mode's bulk endpoint instead. Extended bulk
-streaming in this project is still experimental.
+Windows software also sends full JPEG frames (about 100–200 KB each, no separate
+cursor channel; see `docs/evidence/2026-10-31-windows-mouse-capture.md`), but over
+the extended mode's bulk endpoint at a steady rate. Extended bulk streaming in
+this project is still experimental; finishing it is the whole gap.
 
 These settings can help tune the current desktop path:
 
