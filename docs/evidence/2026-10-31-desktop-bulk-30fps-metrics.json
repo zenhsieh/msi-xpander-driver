@@ -1,0 +1,43 @@
+{
+  "transport": "bulk",
+  "fps_ceiling": 30,
+  "quality": 55,
+  "active_seconds": 60.04,
+  "last_logged_frames": 1420,
+  "last_cumulative_fps_includes_startup": 21.37,
+  "recent_fps": {
+    "min": 8.51,
+    "median": 26.79,
+    "mean": 24.914788732394367,
+    "max": 28.15
+  },
+  "jpeg_bytes": {
+    "min": 107382.0,
+    "median": 120560.5,
+    "mean": 117719.52777777778,
+    "max": 127025.0
+  },
+  "capture_to_send_age_ms": {
+    "min": 9.407,
+    "median": 28.525,
+    "mean": 26.256930555555556,
+    "max": 48.445
+  },
+  "jpeg_worker_ms": {
+    "min": 5.1,
+    "median": 5.7,
+    "mean": 6.171830985915493,
+    "max": 11.4
+  },
+  "usb_ms": {
+    "min": 2.7,
+    "median": 3.0,
+    "mean": 2.9492957746478874,
+    "max": 3.2
+  },
+  "initial_dropped": 164,
+  "last_dropped_cumulative_includes_startup": 257,
+  "usb_interruptions": 0,
+  "reconnect_pending": 0,
+  "cursor_impression": "User selected normal display, noticeably smoother, adding「非常棒，但我不知道能不能再進步」."
+}

@@ -16,7 +16,7 @@ exact validation status of each path.
 |---|---|
 | HID mode switch + RSA vendor handshake | confirmed on macOS and Windows |
 | Dashboard mode (vendor HID, 1440×540 baseline JPEG 4:2:0) | confirmed, physical output verified |
-| macOS extended desktop (`desktop`, ScreenCaptureKit bridge) | Dashboard HID remains the default/fallback; `MSI_DESKTOP_TRANSPORT=bulk` selects paced extended-mode bulk at 30 fps by default (60 optional) |
+| macOS extended desktop (`desktop`, ScreenCaptureKit bridge) | Dashboard HID remains the default/fallback; opt-in bulk desktop confirmed on the panel 2026-10-31 at 30/60 fps ceilings, with visibly smoother cursor motion ([evidence](docs/evidence/2026-10-31-desktop-bulk.md)) |
 | Extended-mode bulk streaming (`show420`, `show-prime420`) | confirmed on the panel 2026-10-31 (`docs/evidence/2026-10-31-mac-bulk-works.md`); desktop transport now selectable with `MSI_DESKTOP_TRANSPORT` |
 | Kiosk mode (`kiosk frame.png`, any PNG source) | works; see `kiosk/README.md` |
 
