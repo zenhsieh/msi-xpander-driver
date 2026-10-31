@@ -34,8 +34,8 @@ smoothness still need to be compared at 30 and 60 fps.
 
 Select `MSI_DESKTOP_TRANSPORT=bulk` to use that bulk endpoint for desktop frames.
 The first real desktop frame uses the configured JPEG quality, without a separate
-quality-1 startup image. A freshly connected Dashboard-mode panel is primed and
-switched once; reconnecting an already extended-mode panel only reopens and
+quality-1 startup image. A Dashboard-mode panel is switched once without replaying
+the bundled Dashboard JPEG; reconnecting an already extended-mode panel only reopens and
 authenticates the bulk session. Each new session starts frame sequence `0x100000`.
 HID remains the default and can be selected explicitly with `MSI_DESKTOP_TRANSPORT=hid`.
 
@@ -67,8 +67,10 @@ MSI_DESKTOP_TRANSPORT=bulk MSI_DESKTOP_FPS=60 bash Run-Desktop.command
 Once the panel is already in extended mode (`0db0:7885`), each producer only opens
 and authenticates that bulk session. It does not request Dashboard mode, replay
 Dashboard priming or reset/re-enumerate the USB device. The panel may retain the
-last picture while no producer runs. Initial startup from Dashboard mode still
-uses the captured forward mode switch. Do not run both producers concurrently.
+last picture while no producer runs. Initial startup from Dashboard mode uses
+the captured unprimed forward mode switch, without sending the bundled startup
+JPEG. The explicit `show-prime420` diagnostic retains its priming procedure.
+Do not run both producers concurrently.
 
 Kiosk's transport defaults to HID unless `MSI_KIOSK_TRANSPORT=bulk` is supplied;
 its 250 ms PNG polling and 5-second static-image resend remain unchanged. An

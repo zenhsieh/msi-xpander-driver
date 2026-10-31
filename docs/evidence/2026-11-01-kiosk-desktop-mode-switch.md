@@ -18,8 +18,19 @@ second; HID's previous two-second retry delay remains unchanged. The current
 producer's last image can remain on the panel during the handoff.
 
 This switches content producers, not the firmware's USB mode. On an initial
-Dashboard-mode connection, bulk still performs the captured forward transition.
+Dashboard-mode connection, bulk performs the captured **unprimed** forward
+transition. Normal desktop/bulk-kiosk startup does not send
+`assets/dashboard-prime.jpg`, including a transition from an already running HID
+kiosk. The explicit `show-prime420` diagnostic is unchanged and still primes when
+requested. This avoids the known host-generated startup-JPEG flash; whether the
+firmware shows any transient image is a physical observation, not a guarantee
+made by the transport code.
 Returning from extended mode to a HID-only kiosk is a separate unsolved transition.
+
+The unprimed `show420` path was previously confirmed to display the full test
+pattern (see the 2026-10-31 bulk evidence). Root coordinates the normal
+desktop/kiosk warm handoff tests; those results must not be inferred from the
+standalone test or from this source change alone.
 
 ## Reverse-mode investigation (read-only)
 

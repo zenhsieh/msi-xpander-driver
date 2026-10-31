@@ -61,9 +61,10 @@ fn connect_desktop(kind: DesktopTransportKind) -> Result<DesktopUsb> {
         DesktopTransportKind::Hid => Ok(DesktopUsb::Hid(connect_dashboard()?)),
         DesktopTransportKind::Bulk => {
             let context = Context::new().context("Initialize bulk USB")?;
-            // switch_to_extended returns immediately for PID 7885. Only a panel
-            // that returned as PID 7920 gets Dashboard priming and a mode switch.
-            switch_to_extended(&context, false, true)?;
+            // PID 7885 needs no mode switch. From PID 7920, use the captured
+            // unprimed transition: normal desktop/kiosk startup must not replay
+            // the bundled Dashboard image over the user's existing picture.
+            switch_to_extended(&context, false, false)?;
             let mut transport = open_display(&context)?;
             authenticate(&mut transport, &mut |stage| eprintln!("{stage}"))?;
             eprintln!("Bulk USB session ready/reconnected; first JPEG uses regular quality, sequence 0x100000");
