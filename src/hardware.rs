@@ -12,10 +12,14 @@ enum DesktopTransportKind { Hid, Bulk }
 
 impl DesktopTransportKind {
     fn parse(value: Option<&str>) -> Result<Self> {
+        Self::parse_setting(value, "MSI_DESKTOP_TRANSPORT")
+    }
+
+    fn parse_setting(value: Option<&str>, setting: &str) -> Result<Self> {
         match value.unwrap_or("hid") {
             "hid" => Ok(Self::Hid),
             "bulk" => Ok(Self::Bulk),
-            other => bail!("MSI_DESKTOP_TRANSPORT must be hid or bulk, got {other:?}"),
+            other => bail!("{setting} must be hid or bulk, got {other:?}"),
         }
     }
 
@@ -56,13 +60,13 @@ fn connect_desktop(kind: DesktopTransportKind) -> Result<DesktopUsb> {
     match kind {
         DesktopTransportKind::Hid => Ok(DesktopUsb::Hid(connect_dashboard()?)),
         DesktopTransportKind::Bulk => {
-            let context = Context::new().context("Initialize desktop bulk USB")?;
+            let context = Context::new().context("Initialize bulk USB")?;
             // switch_to_extended returns immediately for PID 7885. Only a panel
             // that returned as PID 7920 gets Dashboard priming and a mode switch.
             switch_to_extended(&context, false, true)?;
             let mut transport = open_display(&context)?;
             authenticate(&mut transport, &mut |stage| eprintln!("{stage}"))?;
-            eprintln!("Bulk USB session ready/reconnected; first desktop JPEG uses regular quality, sequence 0x100000");
+            eprintln!("Bulk USB session ready/reconnected; first JPEG uses regular quality, sequence 0x100000");
             Ok(DesktopUsb::Bulk(BulkFrames::new(transport)))
         }
     }
@@ -248,6 +252,9 @@ fn connect_dashboard() -> Result<HidDevice> {
 
 /// Send an atomically replaced PNG directly, without a virtual display or capture.
 pub fn kiosk(path: &Path) -> Result<()> {
+    let transport_env = std::env::var("MSI_KIOSK_TRANSPORT").ok();
+    let transport_kind = DesktopTransportKind::parse_setting(transport_env.as_deref(), "MSI_KIOSK_TRANSPORT")?;
+    eprintln!("Kiosk transport: {}", if transport_kind == DesktopTransportKind::Bulk { "bulk" } else { "hid (default/fallback)" });
     let mut device = None;
     let mut previous = Vec::new();
     let mut last_send = Instant::now();
@@ -259,12 +266,9 @@ pub fn kiosk(path: &Path) -> Result<()> {
             let image = image::load_from_memory(&png).context("Decode kiosk PNG")?;
             ensure!(image.width() == 1920 && image.height() == 720, "Kiosk image must be 1920x720");
             let jpeg = crate::jpeg420::encode(&image, 85)?;
-            if device.is_none() { device = Some(connect_dashboard()?); }
+            if device.is_none() { device = Some(connect_desktop(transport_kind)?); }
             let started = Instant::now();
-            for report in dashboard_image_reports(&jpeg)? {
-                let written = device.as_ref().unwrap().write(&report).context("Send kiosk frame")?;
-                ensure!(written == 1024 || written == 1025, "Short kiosk write: {written}");
-            }
+            device.as_mut().unwrap().send(&jpeg, 0)?;
             eprintln!("Kiosk 1920x720: {} JPEG bytes; USB {:.1}ms", jpeg.len(), started.elapsed().as_secs_f64()*1000.0);
             previous = png;
             last_send = Instant::now();
@@ -274,7 +278,7 @@ pub fn kiosk(path: &Path) -> Result<()> {
             eprintln!("Kiosk waiting/reconnecting: {error:#}");
             device = None;
             previous.clear();
-            thread::sleep(Duration::from_secs(2));
+            thread::sleep(transport_kind.retry_delay());
         }
         thread::sleep(Duration::from_millis(250));
     }
@@ -563,6 +567,14 @@ mod desktop_bulk_tests {
         for fps in ["0", "61", "NaN", "inf", "bad"] { assert!(bulk_frame_period(Some(fps)).is_err()); }
         assert_eq!(DesktopTransportKind::Bulk.retry_delay(), Duration::from_secs(1));
         assert_eq!(DesktopTransportKind::Hid.retry_delay(), Duration::from_secs(2));
+    }
+
+    #[test]
+    fn kiosk_transport_defaults_to_hid_and_validates_before_connecting() {
+        assert_eq!(DesktopTransportKind::parse_setting(None, "MSI_KIOSK_TRANSPORT").unwrap(), DesktopTransportKind::Hid);
+        assert_eq!(DesktopTransportKind::parse_setting(Some("bulk"), "MSI_KIOSK_TRANSPORT").unwrap(), DesktopTransportKind::Bulk);
+        let error = DesktopTransportKind::parse_setting(Some("automatic"), "MSI_KIOSK_TRANSPORT").unwrap_err();
+        assert!(error.to_string().contains("MSI_KIOSK_TRANSPORT must be hid or bulk"));
     }
 
     #[test]
