@@ -6,6 +6,7 @@
 @property(nonatomic, strong) NSMenuItem *statusHeader;
 @property(nonatomic, strong) NSMenuItem *errorHeader;
 @property(nonatomic, strong) NSMenuItem *loginItem;
+@property(nonatomic, strong) NSMenuItem *testWindowItem;
 @property(nonatomic, strong) NSMenuItem *logsItem;
 @property(nonatomic, strong) NSMenuItem *quitItem;
 @property(nonatomic, strong) NSMutableArray<NSMenuItem *> *controlItems;
@@ -66,7 +67,9 @@
     NSMenu *submenu=[[NSMenu alloc] initWithTitle:title];
     submenu.autoenablesItems=NO;
     for (NSString *value in values) {
-        NSMenuItem *item=[self actionItem:[value stringByAppendingString:suffix] action:action value:value];
+        NSString *itemTitle=[value stringByAppendingString:suffix];
+        if ([action isEqualToString:@"set-desktop-fps"]) itemTitle=[@"每秒 " stringByAppendingString:itemTitle];
+        NSMenuItem *item=[self actionItem:itemTitle action:action value:value];
         items[value]=item;
         [submenu addItem:item];
     }
@@ -117,9 +120,17 @@
         [menu addItem:item];
     }
     [menu addItem:NSMenuItem.separatorItem];
-    [menu addItem:[self settingsMenu:@"桌面幀率" action:@"set-desktop-fps" values:@[@"30",@"60"] items:self.fpsItems suffix:@" fps"]];
+    [menu addItem:[self settingsMenu:@"桌面更新頻率" action:@"set-desktop-fps" values:@[@"30",@"60"] items:self.fpsItems suffix:@" 次"]];
     [menu addItem:[self settingsMenu:@"桌面畫質" action:@"set-desktop-quality" values:@[@"0.75",@"0.9",@"1.0"] items:self.desktopQualityItems suffix:@""]];
     [menu addItem:[self settingsMenu:@"Kiosk 畫質" action:@"set-kiosk-quality" values:@[@"0.75",@"0.9",@"1.0"] items:self.kioskQualityItems suffix:@""]];
+    NSMenuItem *testOptions=[[NSMenuItem alloc] initWithTitle:@"測試選項" action:nil keyEquivalent:@""];
+    NSMenu *testMenu=[[NSMenu alloc] initWithTitle:@"測試選項"];
+    testMenu.autoenablesItems=NO;
+    self.testWindowItem=[self actionItem:@"顯示測試視窗" action:@"set-test-window" value:nil];
+    [testMenu addItem:self.testWindowItem];
+    testOptions.submenu=testMenu;
+    [self.controlItems addObject:testOptions];
+    [menu addItem:testOptions];
     [menu addItem:[self actionItem:@"重新啟動輸出" action:@"restart" value:nil]];
     [menu addItem:NSMenuItem.separatorItem];
     self.logsItem=[[NSMenuItem alloc] initWithTitle:@"開啟日誌" action:@selector(openLogs:) keyEquivalent:@""];
@@ -159,6 +170,8 @@
     [self updateChecks:self.kioskQualityItems value:[self numberForKey:@"kiosk_quality"]];
     id login=self.state[@"launch_at_login"];
     self.loginItem.state=[login isKindOfClass:NSNumber.class] && [login boolValue] ? NSControlStateValueOn : NSControlStateValueOff;
+    id testWindow=self.state[@"test_window"];
+    self.testWindowItem.state=[testWindow isKindOfClass:NSNumber.class] && [testWindow boolValue] ? NSControlStateValueOn : NSControlStateValueOff;
     self.logsItem.enabled=[self stringForKey:@"logs_path"].length>0;
     NSString *error=[self stringForKey:@"last_error"];
     self.errorHeader.hidden=error.length==0;
@@ -178,6 +191,7 @@
     NSString *action=command[@"action"];
     NSString *value=command[@"value"];
     if ([action isEqualToString:@"set-login"]) value=self.loginItem.state==NSControlStateValueOn ? @"0" : @"1";
+    if ([action isEqualToString:@"set-test-window"]) value=self.testWindowItem.state==NSControlStateValueOn ? @"0" : @"1";
     [self runAction:action value:value terminating:NO];
 }
 
