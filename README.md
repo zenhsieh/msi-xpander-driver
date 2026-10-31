@@ -18,7 +18,7 @@ exact validation status of each path.
 | Dashboard mode (vendor HID, 1440×540 baseline JPEG 4:2:0) | confirmed, physical output verified |
 | macOS extended desktop (`desktop`, ScreenCaptureKit bridge) | Dashboard HID remains the default/fallback; opt-in bulk desktop confirmed on the panel 2026-10-31 at 30/60 fps ceilings, with visibly smoother cursor motion ([evidence](docs/evidence/2026-10-31-desktop-bulk.md)) |
 | Extended-mode bulk streaming (`show420`, `show-prime420`) | confirmed on the panel 2026-10-31 (`docs/evidence/2026-10-31-mac-bulk-works.md`); desktop transport now selectable with `MSI_DESKTOP_TRANSPORT` |
-| Kiosk mode (`kiosk frame.png`, any PNG source) | works; see `kiosk/README.md` |
+| Kiosk mode (`kiosk frame.png`, any PNG source) | HID default/fallback; `MSI_KIOSK_TRANSPORT=bulk` shares the extended-mode endpoint with bulk desktop, allowing content-producer switches without a physical replug; see `kiosk/README.md` |
 
 ## Why the cursor is not as smooth as on Windows
 
@@ -51,6 +51,30 @@ These settings can help tune the current desktop path:
 Bulk write failures drop the session and retry after one second. The latest-frame
 capture slot keeps updating while USB is unavailable; recovery does not queue old
 frames or automatically switch transports.
+
+## Switch between kiosk and desktop without a USB replug
+
+Use bulk for both producers and stop the current producer before starting the
+other. For example (the kiosk PNG must already exist):
+
+```sh
+MSI_KIOSK_TRANSPORT=bulk cargo run --release --features hardware -- kiosk kiosk/frame.png
+# Stop with Ctrl-C, then start the desktop:
+MSI_DESKTOP_TRANSPORT=bulk MSI_DESKTOP_FPS=60 bash Run-Desktop.command
+# Stop with Ctrl-C, then restart the bulk kiosk command above.
+```
+
+Once the panel is already in extended mode (`0db0:7885`), each producer only opens
+and authenticates that bulk session. It does not request Dashboard mode, replay
+Dashboard priming or reset/re-enumerate the USB device. The panel may retain the
+last picture while no producer runs. Initial startup from Dashboard mode still
+uses the captured forward mode switch. Do not run both producers concurrently.
+
+Kiosk's transport defaults to HID unless `MSI_KIOSK_TRANSPORT=bulk` is supplied;
+its 250 ms PNG polling and 5-second static-image resend remain unchanged. An
+existing HID-only background kiosk must be stopped before testing bulk desktop.
+This feature switches the image producer while keeping the firmware in the same
+mode; a reverse extended-to-Dashboard firmware command has not been established.
 
 ## Build
 
