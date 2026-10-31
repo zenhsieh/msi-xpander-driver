@@ -45,8 +45,11 @@ def annotate(image, message, failed=False):
     draw = ImageDraw.Draw(image)
     draw.rectangle((0, 684, 1919, 719), fill=(83, 28, 29) if failed else (11, 17, 27))
     draw.line((28, 684, 1892, 684), fill=(28, 42, 59))
-    draw.ellipse((28, 699, 34, 705), fill=(242, 194, 104) if failed else (90, 210, 110))
-    draw.text((46, 693), message, font=font(17), fill=(234, 241, 250) if failed else (147, 167, 191))
+    # Status dot + message are centred as one group on the 1920-wide strip.
+    status_font = font(17)
+    x = round((SIZE[0] - (18 + draw.textlength(message, font=status_font))) / 2)
+    draw.ellipse((x, 699, x + 6, 705), fill=(242, 194, 104) if failed else (90, 210, 110))
+    draw.text((x + 18, 693), message, font=status_font, fill=(234, 241, 250) if failed else (147, 167, 191))
     return image
 
 
