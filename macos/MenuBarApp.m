@@ -44,6 +44,7 @@
 
 - (NSString *)operationTitle {
     if (self.terminationPending) return @"正在停止輸出並結束…";
+    if ([self.currentAction isEqualToString:@"resume"]) return @"正在恢復上次模式…";
     if ([self.currentAction isEqualToString:@"kiosk"]) return @"正在啟動 Kiosk…";
     if ([self.currentAction isEqualToString:@"desktop"]) return @"正在啟動延伸桌面…";
     if ([self.currentAction isEqualToString:@"stop"]) return @"正在停止輸出…";
@@ -132,7 +133,7 @@
     [menu addItem:self.quitItem];
     self.statusItem.menu=menu;
     [self refreshMenu];
-    [self runAction:@"status" value:nil terminating:NO];
+    [self runAction:@"resume" value:nil terminating:NO];
     self.pollTimer=[NSTimer timerWithTimeInterval:2 repeats:YES block:^(NSTimer *timer) {
         (void)timer;
         if (!self.busy && !self.terminationPending) [self runAction:@"status" value:nil terminating:NO];
@@ -265,7 +266,7 @@
 }
 
 - (void)beginTerminationIfIdle {
-    if (!self.busy) [self runAction:@"stop" value:nil terminating:YES];
+    if (!self.busy) [self runAction:@"shutdown" value:nil terminating:YES];
 }
 
 - (NSApplicationTerminateReply)applicationShouldTerminate:(NSApplication *)sender {
