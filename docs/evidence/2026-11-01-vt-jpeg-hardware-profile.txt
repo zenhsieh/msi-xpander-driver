@@ -1,0 +1,1 @@
+width=1920 height=720 sampling=22 11 11 progressive=no baseline=yes
