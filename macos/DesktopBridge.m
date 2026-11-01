@@ -597,6 +597,9 @@ int main(int argc, const char *argv[]) {
                 if ([captureColor isEqualToString:@"srgb"]) configuration.colorSpaceName=kCGColorSpaceSRGB;
                 fprintf(stderr,"Capture color conversion: %s\n",[captureColor isEqualToString:@"srgb"]?"forced sRGB":"source display default");
                 dispatch_async(dispatch_get_main_queue(), ^{
+                    BOOL showTestWindow=[NSProcessInfo.processInfo.environment[@"MSI_DESKTOP_TEST_WINDOW"] isEqualToString:@"1"];
+                    fprintf(stderr,"Desktop test window: %s\n",showTestWindow?"enabled":"disabled");
+                    if (showTestWindow) {
                     for (NSScreen *screen in NSScreen.screens) {
                         if ([screen.deviceDescription[@"NSScreenNumber"] unsignedIntValue] != displayID) continue;
                         testWindow = [[NSWindow alloc] initWithContentRect:NSMakeRect(20,30,650,250)
@@ -625,6 +628,7 @@ int main(int argc, const char *argv[]) {
                         [NSTimer scheduledTimerWithTimeInterval:1 repeats:YES block:^(NSTimer *timer) {
                             label.stringValue = [NSString stringWithFormat:@"MSI Xpander — Live Desktop\n%@\nDrag a window onto this screen", [NSDate date]];
                         }];
+                    }
                     }
                     NSString *fpsText=NSProcessInfo.processInfo.environment[@"MSI_DESKTOP_FPS"];
                     double fps=fpsText?fpsText.doubleValue:60;
