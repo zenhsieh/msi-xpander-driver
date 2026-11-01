@@ -75,9 +75,9 @@ class ControllerTests(unittest.TestCase):
         self.assertEqual(events, ["desktop-exit", "kiosk-exit", "black"])
         self.assertEqual(c.read_json(c.STATE, {})["resume_mode"], "stopped")
 
-    def test_native_modes_use_native_renderer_without_capture_helper(self):
+    def test_screensaver_uses_native_renderer_without_capture_helper(self):
         renderer = self.root / "bin/NativeKioskRenderer"; renderer.touch()
-        for mode in ("native-kiosk", "screensaver"):
+        for mode in ("screensaver",):
             process = Mock(pid=43210); process.poll.return_value = None
             def spawn(argv, **kwargs):
                 self.assertEqual(argv[-1], str(renderer))
@@ -100,7 +100,140 @@ class ControllerTests(unittest.TestCase):
         with patch.object(c, "status", return_value={"ok": True, "mode": "stopped"}), \
              patch.object(c, "start_desktop") as start:
             c.main(["resume"])
-        start.assert_called_once_with("screensaver")
+        start.assert_called_once_with("screensaver", remember=False)
+
+    def test_widget_kiosk_uses_real_desktop_and_its_own_purpose(self):
+        c.write_json(c.PREFS, {"test_window": True})
+        process = Mock(pid=43210); process.poll.return_value = None
+        def spawn(argv, **kwargs):
+            self.assertEqual(argv[-1], str(self.helper))
+            self.assertEqual(kwargs["env"]["MSI_DESKTOP_PURPOSE"], "widgets")
+            self.assertEqual(kwargs["env"]["MSI_DESKTOP_TEST_WINDOW"], "0")
+            self.assertEqual(kwargs["env"]["MSI_VT_QUALITY"], "1.0")
+            kwargs["stdout"].write(b"Live desktop: 1 frames\n"); kwargs["stdout"].flush()
+            return process
+        with patch.object(c, "stop_desktop"), patch.object(c, "stop_kiosk"), \
+             patch.object(c.subprocess, "Popen", side_effect=spawn), \
+             patch.object(c, "process_identity", return_value="real widgets capture"):
+            c.start_desktop("native-kiosk")
+
+    def system_fixture(self, selected="kiosk", actual="kiosk"):
+        self.actual = actual
+        c.write_json(c.STATE, {"resume_mode": selected})
+        def kiosk(remember=True):
+            self.actual = "kiosk"
+            if remember: c.save_state(resume_mode="kiosk")
+        def desktop(mode="desktop", remember=True):
+            self.actual = mode
+            if remember: c.save_state(resume_mode=mode)
+        def stop():
+            self.actual = "stopped"
+        p = patch.multiple(c, status=Mock(side_effect=lambda: {"ok": True, "mode": self.actual}),
+                           start_kiosk=Mock(side_effect=kiosk), start_desktop=Mock(side_effect=desktop),
+                           stop_desktop=Mock(side_effect=stop), stop_kiosk=Mock(side_effect=stop),
+                           blank_panel=Mock())
+        p.start(); self.addCleanup(p.stop)
+
+    def system(self, saver=False, screen=False, sleep=False):
+        c.main(["system-state", json.dumps({"screensaver": saver, "screen_sleep": screen,
+                                            "system_sleep": sleep})])
+
+    def test_system_screensaver_returns_to_selection(self):
+        self.system_fixture()
+        self.system(saver=True)
+        self.assertEqual(self.actual, "screensaver")
+        self.assertEqual(c.read_json(c.STATE, {})["resume_mode"], "kiosk")
+        self.system()
+        self.assertEqual(self.actual, "kiosk")
+        c.start_desktop.assert_called_once_with("screensaver", remember=False)
+        c.start_kiosk.assert_called_once_with(remember=False)
+
+    def test_sleep_has_priority_and_saver_stop_does_not_wake_panel(self):
+        self.system_fixture()
+        self.system(saver=True)
+        self.system(saver=True, screen=True)
+        self.assertEqual(self.actual, "stopped")
+        self.system(screen=True)
+        self.assertEqual(self.actual, "stopped")
+        c.blank_panel.assert_called_once()
+        c.start_kiosk.assert_not_called()
+        self.system()
+        self.assertEqual(self.actual, "kiosk")
+
+    def test_duplicate_sleep_notifications_are_idempotent(self):
+        self.system_fixture()
+        self.system(screen=True)
+        self.system(screen=True)
+        c.blank_panel.assert_called_once()
+        c.stop_desktop.assert_called_once()
+
+    def test_manual_off_stays_off_after_system_saver_sleep_and_wake(self):
+        self.system_fixture()
+        c.main(["stop"])
+        self.system(saver=True)
+        self.system(saver=True, screen=True, sleep=True)
+        self.system()
+        c.start_desktop.assert_not_called(); c.start_kiosk.assert_not_called()
+        self.assertEqual(c.read_json(c.STATE, {})["resume_mode"], "stopped")
+
+    def test_selection_while_asleep_is_deferred_until_wake(self):
+        self.system_fixture()
+        self.system(screen=True)
+        c.main(["native-kiosk"])
+        c.start_desktop.assert_not_called()
+        self.assertEqual(c.read_json(c.STATE, {})["resume_mode"], "native-kiosk")
+        self.system()
+        c.start_desktop.assert_called_once_with("native-kiosk", remember=False)
+
+    def test_failed_automatic_start_does_not_replace_selection(self):
+        self.system_fixture()
+        c.start_desktop.side_effect = RuntimeError("fixture: capture not ready")
+        with self.assertRaises(RuntimeError): self.system(saver=True)
+        self.assertEqual(c.read_json(c.STATE, {})["resume_mode"], "kiosk")
+        self.system()
+        self.assertEqual(self.actual, "kiosk")
+
+    def test_sleep_resume_does_not_allocate_a_virtual_output(self):
+        self.system_fixture(selected="desktop", actual="stopped")
+        c.save_state(system_state={"screensaver": False, "screen_sleep": True, "system_sleep": True})
+        c.main(["resume"])
+        c.start_desktop.assert_not_called(); c.start_kiosk.assert_not_called()
+        c.blank_panel.assert_not_called()
+
+    def test_automatic_saver_quality_change_preserves_remote_selection(self):
+        self.system_fixture()
+        self.system(saver=True)
+        c.set_preference("set-kiosk-quality", "0.9")
+        self.assertEqual(c.read_json(c.STATE, {})["resume_mode"], "kiosk")
+        self.assertEqual(self.actual, "screensaver")
+
+    def test_sleep_clears_last_frame_even_if_producer_has_already_exited(self):
+        self.system_fixture(selected="kiosk", actual="stopped")
+        self.system(screen=True)
+        c.blank_panel.assert_called_once()
+        self.system(screen=True)
+        c.blank_panel.assert_called_once()
+
+    def test_auto_start_never_temporarily_overwrites_selected_mode(self):
+        c.write_json(c.STATE, {"resume_mode": "kiosk"})
+        renderer = self.root / "bin/NativeKioskRenderer"; renderer.touch()
+        process = Mock(pid=43210); process.poll.return_value = None
+        def spawn(argv, **kwargs):
+            self.assertEqual(c.read_json(c.STATE, {})["resume_mode"], "kiosk")
+            kwargs["stdout"].write(b"Live desktop: 1 frames\n"); kwargs["stdout"].flush()
+            return process
+        with patch.object(c, "status", return_value={"mode": "kiosk"}), \
+             patch.object(c, "stop_desktop"), patch.object(c, "stop_kiosk"), \
+             patch.object(c.subprocess, "Popen", side_effect=spawn), \
+             patch.object(c, "process_identity", return_value="clock producer"):
+            self.system(saver=True)
+        self.assertEqual(c.read_json(c.STATE, {})["resume_mode"], "kiosk")
+
+    def test_system_payload_validation_precedes_state_changes(self):
+        for payload in ("null", "[]", "{}", '{"screensaver":true}',
+                        '{"screensaver":1,"screen_sleep":false,"system_sleep":false}', "invalid"):
+            with self.assertRaises(RuntimeError): c.set_system_state(payload)
+        self.assertFalse(c.STATE.exists())
 
     def test_invalid_preferences_have_no_side_effect(self):
         for action, value in (("set-desktop-fps", "120"), ("set-desktop-quality", "NaN"),
@@ -158,7 +291,7 @@ class ControllerTests(unittest.TestCase):
 
     def test_resume_stopped_reconciles_an_autoloaded_kiosk(self):
         c.write_json(c.STATE, {"resume_mode": "stopped"})
-        with patch.object(c, "status", return_value={"mode": "kiosk"}), \
+        with patch.object(c, "blank_panel"), patch.object(c, "status", return_value={"mode": "kiosk"}), \
              patch.object(c, "stop_desktop") as desktop, patch.object(c, "stop_kiosk") as kiosk:
             c.main(["resume"])
         desktop.assert_called_once(); kiosk.assert_called_once()

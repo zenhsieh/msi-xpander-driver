@@ -3,7 +3,6 @@
 #import <CoreGraphics/CoreGraphics.h>
 #include <signal.h>
 #include <unistd.h>
-#include <dlfcn.h>
 #include <time.h>
 #import <CoreVideo/CoreVideo.h>
 #import <VideoToolbox/VideoToolbox.h>
@@ -32,9 +31,6 @@ static BOOL systemSleeping, screensSleeping;
 static NSTimeInterval captureRetryAfter;
 static NSUInteger captureEpoch;
 static BOOL colorCaptureDiagnostic;
-static NSArray<NSDictionary *> *physicalHDRBaseline;
-static Boolean (*readHDR)(CGDirectDisplayID);
-static int (*setHDR)(CGDirectDisplayID,bool);
 static id performanceActivity;
 static BOOL useVTJPEG;
 static double vtQuality = 0.75;
@@ -46,44 +42,6 @@ static uint64_t vtSequence;
 static BOOL vtVerifiedOutput;
 static void capture(void);
 static void invalidateVTEncoder(void);
-
-static void recordPhysicalHDR(void) {
-    void *framework=dlopen("/System/Library/PrivateFrameworks/SkyLight.framework/SkyLight",RTLD_LAZY);
-    readHDR=framework?dlsym(framework,"SLSDisplayIsHDRModeEnabled"):NULL;
-    setHDR=framework?dlsym(framework,"SLSDisplaySetHDRModeEnabled"):NULL;
-    NSMutableArray *baseline=[NSMutableArray array];
-    for (NSScreen *screen in NSScreen.screens) {
-        CGDirectDisplayID display=[screen.deviceDescription[@"NSScreenNumber"] unsignedIntValue];
-        CFUUIDRef uuid=CGDisplayCreateUUIDFromDisplayID(display);
-        if (!uuid) continue;
-        NSString *identity=CFBridgingRelease(CFUUIDCreateString(NULL,uuid)); CFRelease(uuid);
-        if (readHDR) {
-            BOOL enabled=readHDR(display);
-            [baseline addObject:@{@"uuid":identity,@"vendor":@(CGDisplayVendorNumber(display)),@"product":@(CGDisplayModelNumber(display)),@"hdr":@(enabled),@"name":screen.localizedName}];
-            fprintf(stderr,"Physical HDR baseline: %s id=%u enabled=%d\n",screen.localizedName.UTF8String,display,enabled);
-        }
-    }
-    physicalHDRBaseline=baseline;
-}
-
-// Only restore the pre-existing HDR preference after our own display/capture
-// reconfiguration. Never infer HDR from EDR headroom or force a global default.
-static void preservePhysicalHDR(NSString *stage) {
-    if (!readHDR || !setHDR) return;
-    for (NSScreen *screen in NSScreen.screens) {
-        CGDirectDisplayID display=[screen.deviceDescription[@"NSScreenNumber"] unsignedIntValue];
-        if (display==captureDisplayID) continue;
-        CFUUIDRef uuid=CGDisplayCreateUUIDFromDisplayID(display); if (!uuid) continue;
-        NSString *identity=CFBridgingRelease(CFUUIDCreateString(NULL,uuid)); CFRelease(uuid);
-        for (NSDictionary *saved in physicalHDRBaseline) {
-            if (![saved[@"uuid"] isEqual:identity] || [saved[@"vendor"] unsignedIntValue]!=CGDisplayVendorNumber(display) || [saved[@"product"] unsignedIntValue]!=CGDisplayModelNumber(display)) continue;
-            BOOL expected=[saved[@"hdr"] boolValue],actual=readHDR(display);
-            int result=0;
-            if (expected!=actual) result=setHDR(display,expected);
-            fprintf(stderr,"Physical HDR check [%s]: %s expected=%d before=%d after=%d result=%d\n",stage.UTF8String,[saved[@"name"] UTF8String],expected,actual,readHDR(display),result);
-        }
-    }
-}
 
 @interface DesktopStreamOutput : NSObject <SCStreamOutput, SCStreamDelegate>
 @end
@@ -113,7 +71,7 @@ static void resetCapture(NSString *reason) {
     busy=NO;
     sourceWidth=sourceHeight=sourcePixelWidth=sourcePixelHeight=0;
     captureRetryAfter=NSDate.timeIntervalSinceReferenceDate+1.0;
-    if (previous) [previous stopCaptureWithCompletionHandler:^(NSError *error) {}];
+    if (previous) [previous stopCaptureWithCompletionHandler:^(NSError *error) { (void)error; }];
 }
 
 static void recoverStream(SCStream *expected,NSString *reason) {
@@ -367,8 +325,6 @@ static void capture(void) {
                             dispatch_async(dispatch_get_main_queue(), ^{
                                 if (starting!=liveStream) return;
                                 fprintf(stderr,"Continuous capture running on retained virtual display %u\n",captureDisplayID);
-                                preservePhysicalHDR(@"capture started/recovered");
-                                dispatch_after(dispatch_time(DISPATCH_TIME_NOW,2*NSEC_PER_SEC),dispatch_get_main_queue(), ^{preservePhysicalHDR(@"capture settled");});
                                 busy=NO;
                             });
                         }];
@@ -441,15 +397,19 @@ int main(int argc, const char *argv[]) {
         [NSApp setActivationPolicy:NSApplicationActivationPolicyAccessory];
         NSNotificationCenter *workspace=NSWorkspace.sharedWorkspace.notificationCenter;
         [workspace addObserverForName:NSWorkspaceWillSleepNotification object:nil queue:NSOperationQueue.mainQueue usingBlock:^(NSNotification *note) {
+            (void)note;
             systemSleeping=YES; resetCapture(@"System entering sleep");
         }];
         [workspace addObserverForName:NSWorkspaceScreensDidSleepNotification object:nil queue:NSOperationQueue.mainQueue usingBlock:^(NSNotification *note) {
+            (void)note;
             screensSleeping=YES; resetCapture(@"Displays entering sleep");
         }];
         [workspace addObserverForName:NSWorkspaceDidWakeNotification object:nil queue:NSOperationQueue.mainQueue usingBlock:^(NSNotification *note) {
+            (void)note;
             systemSleeping=NO; resetCapture(@"System woke; waiting for displays and capture services");
         }];
         [workspace addObserverForName:NSWorkspaceScreensDidWakeNotification object:nil queue:NSOperationQueue.mainQueue usingBlock:^(NSNotification *note) {
+            (void)note;
             screensSleeping=NO; resetCapture(@"Displays woke; rebuilding capture");
         }];
         // Fault injection uses the same reset path without sleeping the Mac.
@@ -471,7 +431,6 @@ int main(int argc, const char *argv[]) {
             fprintf(stderr, "SCREEN_RECORDING_REQUIRED: Enable MSI Xpander Desktop in System Settings > Privacy & Security > Screen & System Audio Recording, then run again.\n");
             return 77;
         }
-        recordPhysicalHDR();
         performanceActivity=[NSProcessInfo.processInfo beginActivityWithOptions:NSActivityUserInitiatedAllowingIdleSystemSleep|NSActivityLatencyCritical reason:@"Low-latency local Xpander display streaming"];
         Class descriptorClass = NSClassFromString(@"CGVirtualDisplayDescriptor");
         Class displayClass = NSClassFromString(@"CGVirtualDisplay");
@@ -491,14 +450,15 @@ int main(int argc, const char *argv[]) {
         unsigned int renderHeight = largeHiDPI ? pixelHeight*2 : pixelHeight;
         unsigned int logicalWidth = hiDPI && !largeHiDPI ? pixelWidth/2 : pixelWidth;
         unsigned int logicalHeight = hiDPI && !largeHiDPI ? pixelHeight/2 : pixelHeight;
+        BOOL widgets=[NSProcessInfo.processInfo.environment[@"MSI_DESKTOP_PURPOSE"] isEqualToString:@"widgets"];
         id descriptor = [descriptorClass new];
-        [descriptor setValue:@"MSI Xpander Desktop" forKey:@"name"];
+        [descriptor setValue:widgets?@"MSI Xpander Widgets":@"MSI Xpander Desktop" forKey:@"name"];
         [descriptor setValue:@(hiDPI ? 3840 : renderWidth) forKey:@"maxPixelsWide"];
         [descriptor setValue:@(hiDPI ? 1440 : renderHeight) forKey:@"maxPixelsHigh"];
         [descriptor setValue:@3504 forKey:@"vendorID"];
-        [descriptor setValue:@31008 forKey:@"productID"];
-        [descriptor setValue:@20261030 forKey:@"serialNum"];
-        [descriptor setValue:@20261030 forKey:@"serialNumber"];
+        [descriptor setValue:widgets?@31009:@31008 forKey:@"productID"];
+        [descriptor setValue:widgets?@20261102:@20261030 forKey:@"serialNum"];
+        [descriptor setValue:widgets?@20261102:@20261030 forKey:@"serialNumber"];
         [descriptor setValue:[NSValue valueWithSize:NSMakeSize(290,109)] forKey:@"sizeInMillimeters"];
         NSString *virtualColorMode=NSProcessInfo.processInfo.environment[@"MSI_VIRTUAL_COLOR_MODE"] ?: @"system-default";
         BOOL systemColor=[virtualColorMode isEqualToString:@"system-default"];
@@ -510,6 +470,7 @@ int main(int argc, const char *argv[]) {
         }
         fprintf(stderr,"Virtual color descriptor: %s\n",systemColor?"system defaults":"explicit sRGB primaries");
         [descriptor setValue:dispatch_get_main_queue() forKey:@"queue"];
+        fprintf(stderr,"Desktop purpose: %s; no physical HDR preferences are read or written\n",widgets?"macOS widgets (real desktop)":"extended desktop");
         virtualDisplay = [[displayClass alloc] initWithDescriptor:descriptor];
         if (!virtualDisplay) fail(@"Could not create virtual display");
         id settings = [settingsClass new];
@@ -568,7 +529,6 @@ int main(int argc, const char *argv[]) {
             BOOL correct = CGDisplayModeGetPixelWidth(activeMode)==renderWidth && CGDisplayModeGetPixelHeight(activeMode)==renderHeight;
             CGDisplayModeRelease(activeMode);
             if (!correct) fail(@"Active display pixel dimensions differ from requested output");
-            preservePhysicalHDR(@"virtual display configured");
             if ([NSProcessInfo.processInfo.environment[@"MSI_COLOR_DIAGNOSTIC"] isEqualToString:@"virtual-only"]) {
                 fprintf(stderr,"COLOR DIAGNOSTIC: virtual display only, no screen capture or USB writes. Automatically exiting in 20 seconds.\n");
                 dispatch_after(dispatch_time(DISPATCH_TIME_NOW,20*NSEC_PER_SEC),dispatch_get_main_queue(), ^{exit(0);});
@@ -626,6 +586,7 @@ int main(int argc, const char *argv[]) {
                         placeWindow();
                         dispatch_after(dispatch_time(DISPATCH_TIME_NOW, 2*NSEC_PER_SEC), dispatch_get_main_queue(), placeWindow);
                         [NSTimer scheduledTimerWithTimeInterval:1 repeats:YES block:^(NSTimer *timer) {
+                            (void)timer;
                             label.stringValue = [NSString stringWithFormat:@"MSI Xpander — Live Desktop\n%@\nDrag a window onto this screen", [NSDate date]];
                         }];
                     }
@@ -634,7 +595,7 @@ int main(int argc, const char *argv[]) {
                     double fps=fpsText?fpsText.doubleValue:60;
                     if (fps<1 || fps>60) fail(@"MSI_DESKTOP_FPS must be between 1 and 60");
                     fprintf(stderr,"Capture target: %.0f fps; backend=%s\n",fps,useContinuousStream?"continuous SCStream":"screenshots");
-                    [NSTimer scheduledTimerWithTimeInterval:useContinuousStream?0.1:1.0/fps repeats:YES block:^(NSTimer *timer) { capture(); }];
+                    [NSTimer scheduledTimerWithTimeInterval:useContinuousStream?0.1:1.0/fps repeats:YES block:^(NSTimer *timer) { (void)timer; capture(); }];
                     capture();
                 });
             }];
