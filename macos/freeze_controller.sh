@@ -53,7 +53,8 @@ from pathlib import Path
 import sys
 root, destination = map(Path, sys.argv[1:])
 sources = ["macos/menu_bar_controller.py", "macos/install_menu_bar.py",
-           "kiosk/run_kiosk.py", "macos/freeze_controller.sh", "macos/requirements-packaging.txt"]
+           "kiosk/run_kiosk.py", "macos/freeze_controller.sh", "macos/requirements-packaging.txt",
+           "macos/controller-entitlements.plist"]
 destination.write_text(json.dumps({
     "source_sha256": {name: hashlib.sha256((root/name).read_bytes()).hexdigest() for name in sources},
     "build_dependencies": {name: importlib.metadata.version(name) for name in
@@ -76,6 +77,7 @@ PY
     --collect-submodules PIL --collect-data PIL --copy-metadata Pillow \
     --exclude-module tkinter --exclude-module _tkinter \
     --codesign-identity "$MSI_SIGN_IDENTITY" \
+    --osx-entitlements-file "$root/macos/controller-entitlements.plist" \
     --osx-bundle-identifier com.digiter.msixpander.controller \
     "$root/macos/menu_bar_controller.py"
 
@@ -130,6 +132,20 @@ for path in sorted(bundle.rglob("*")):
 if not checked:
     raise SystemExit("Frozen controller contains no Mach-O executable")
 
+# Static signature verification does not prove the hardened executable can load
+# its embedded Python. Exercise only read-only status, never resume/install.
+smoke = subprocess.run([str(bundle/"XpanderController"), "status"],
+                       capture_output=True, text=True, timeout=30)
+if smoke.returncode:
+    (root/"target/controller-status.stderr").write_text(smoke.stderr)
+    raise SystemExit(f"Frozen controller status failed with exit {smoke.returncode}; inspect target/controller-status.stderr")
+status = json.loads(smoke.stdout)
+if not isinstance(status, dict) or status.get("ok") is not True:
+    raise SystemExit("Frozen controller status returned an invalid result")
+# Status may contain a private source command; retain only these public fields.
+public_status = {name: status.get(name) for name in
+                 ("ok", "mode", "desktop_fps", "desktop_quality", "kiosk_quality", "test_window", "configured")}
+
 metadata = {
     "format": "PyInstaller onedir",
     "executable": "XpanderController",
@@ -144,6 +160,7 @@ metadata = {
     "verified_macho_files": checked,
     "resigned_frameworks": [str(path.relative_to(bundle)) for path in frameworks],
     "recipient_requires_python_install": False,
+    "runtime_status_smoke": public_status,
 }
 (bundle/"build-provenance.json").write_text(json.dumps(metadata, indent=2)+"\n")
 print(json.dumps({key: metadata[key] for key in
