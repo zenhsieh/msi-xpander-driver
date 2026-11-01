@@ -38,6 +38,32 @@ for input in macos/menu_bar_controller.py macos/install_menu_bar.py kiosk/run_ki
     [ -f "$input" ] || { echo "Missing controller input: $input" >&2; exit 1; }
 done
 
+# Snapshot source/dependency identities before analysis, not after compilation.
+# A concurrent source edit must invalidate the result instead of receiving a
+# misleading provenance record for code that was not actually frozen.
+input_state="$root/target/controller-freeze-inputs-$$.json"
+trap 'rm -f "$input_state"' EXIT
+"$python" - "$root" "$input_state" <<'PY'
+import hashlib
+import importlib.metadata
+import json
+import os
+import platform
+from pathlib import Path
+import sys
+root, destination = map(Path, sys.argv[1:])
+sources = ["macos/menu_bar_controller.py", "macos/install_menu_bar.py",
+           "kiosk/run_kiosk.py", "macos/freeze_controller.sh", "macos/requirements-packaging.txt"]
+destination.write_text(json.dumps({
+    "source_sha256": {name: hashlib.sha256((root/name).read_bytes()).hexdigest() for name in sources},
+    "build_dependencies": {name: importlib.metadata.version(name) for name in
+                           ("PyInstaller", "Pillow", "pyinstaller-hooks-contrib", "altgraph", "macholib", "packaging", "setuptools")},
+    "python": platform.python_version(),
+    "architecture": platform.machine(),
+    "signing_identity": os.environ["MSI_SIGN_IDENTITY"],
+}, indent=2)+"\n")
+PY
+
 "$python" -m PyInstaller --noconfirm --clean --onedir --console --noupx \
     --name XpanderController \
     --distpath "$root/target/frozen" \
@@ -54,7 +80,7 @@ done
     "$root/macos/menu_bar_controller.py"
 
 bundle="$root/target/frozen/XpanderController"
-"$python" - "$root" "$bundle" <<'PY'
+"$python" - "$root" "$bundle" "$input_state" <<'PY'
 import hashlib
 import importlib.metadata
 import json
@@ -63,7 +89,15 @@ from pathlib import Path
 import subprocess
 import sys
 
-root, bundle = map(Path, sys.argv[1:])
+root, bundle, input_state = map(Path, sys.argv[1:])
+before = json.loads(input_state.read_text())
+after_hashes = {name: hashlib.sha256((root/name).read_bytes()).hexdigest() for name in before["source_sha256"]}
+if after_hashes != before["source_sha256"]:
+    changed = [name for name in after_hashes if after_hashes[name] != before["source_sha256"][name]]
+    raise SystemExit("Controller sources changed during freezing; rerun the build: " + ", ".join(changed))
+after_dependencies = {name: importlib.metadata.version(name) for name in before["build_dependencies"]}
+if after_dependencies != before["build_dependencies"]:
+    raise SystemExit("Packaging dependencies changed during freezing; rerun the build")
 # Verify every collected Mach-O, including embedded Python/Pillow libraries.
 # PyInstaller signs these with the supplied identity; no signing key is copied.
 checked = []
@@ -77,16 +111,15 @@ for path in sorted(bundle.rglob("*")):
 if not checked:
     raise SystemExit("Frozen controller contains no Mach-O executable")
 
-sources = ["macos/menu_bar_controller.py", "macos/install_menu_bar.py",
-           "kiosk/run_kiosk.py", "macos/freeze_controller.sh", "macos/requirements-packaging.txt"]
 metadata = {
     "format": "PyInstaller onedir",
     "executable": "XpanderController",
     "python": platform.python_version(),
     "architecture": platform.machine(),
-    "build_dependencies": {name: importlib.metadata.version(name) for name in
-                           ("PyInstaller", "Pillow", "pyinstaller-hooks-contrib", "altgraph", "macholib", "packaging", "setuptools")},
-    "source_sha256": {name: hashlib.sha256((root/name).read_bytes()).hexdigest() for name in sources},
+    "build_dependencies": before["build_dependencies"],
+    "source_sha256": before["source_sha256"],
+    "signing_identity": before["signing_identity"],
+    "source_unchanged_during_freeze": True,
     "bundle_bytes_before_metadata": sum(path.stat().st_size for path in bundle.rglob("*") if path.is_file() and not path.is_symlink()),
     "verified_macho_count": len(checked),
     "verified_macho_files": checked,
