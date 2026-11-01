@@ -10,13 +10,19 @@ Terminating that process removes the virtual monitor. These operations change
 macOS display topology even though the panel itself receives ordinary JPEGs.
 Kiosk and the new native renderer do not register a virtual monitor.
 
-The physical display HDR preservation function reads an initial baseline and
-calls SLSDisplaySetHDRModeEnabled only if a subsequent read differs. Reviewing
-the existing local desktop log found 12 MSI MPG341CQR checks, all reporting
-expected=1, before=1, after=1. No restoration write was indicated by those
-checks. These sampled observations do **not** rule out an off/on transition
-between checks or an HDR/link resynchronization while the enabled flag stays
-unchanged. A final enabled reading is not proof of uninterrupted HDR output.
+The previously deployed bridge used an undocumented SkyLight HDR getter to
+record a baseline and conditionally restore a changed value. The existing log
+contained 12 MSI reads with the raw value 1 before/after and no restoration
+write indicated. The getter also returned 0 for the other displays. Those raw
+values have not been validated as actual HDR preference/state and must not be
+used to claim that another monitor has HDR disabled. The user's correction is
+that all three physical screens are on and only the MSI flashes. Monitor power
+and HDR state must not be conflated, and the user did not authorize changing
+HDR preferences for this comparison.
+
+Neither the sampled raw values nor final-state inspection rule out a transient
+signal/colour-pipeline resynchronization. The new diagnostic observer avoids
+that getter entirely and never writes physical display settings.
 
 The observed trigger is consistent with virtual-output configuration causing
 physical-output/compositor synchronization. HDR involvement is plausible but

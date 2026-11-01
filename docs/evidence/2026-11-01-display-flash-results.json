@@ -1,0 +1,53 @@
+{
+  "recorded_at": "2026-11-01T15:08:36.049365+08:00",
+  "scope": "Virtual-output allocation/settings only; production app remains unchanged. No screen capture, USB frame writes or HDR settings writes by the probe.",
+  "user_constraints": {
+    "preallocate_at_app_launch": false,
+    "retain_hidden_output_after_leaving_desktop": false,
+    "keep_current_lifecycle": true,
+    "change_physical_hdr_settings": false
+  },
+  "observations": [
+    {
+      "test": "Allocate without applying settings (repeat)",
+      "user_result": "No flash; requested proceeding to settings."
+    },
+    {
+      "test": "Apply 1920x720 60 Hz, system-default colour descriptor",
+      "user_result": "MSI flashes, other two monitors do not."
+    },
+    {
+      "test": "Reapply identical settings on retained output",
+      "user_result": "No additional flash."
+    },
+    {
+      "test": "Apply 1920x720 60 Hz with explicit sRGB primaries",
+      "user_result": "MSI still flashes as before."
+    },
+    {
+      "test": "Apply standard 1280x720 60 Hz (first run)",
+      "user_result": "Reports no flash but asks whether enabled; not accepted as a verified workaround without repeat.",
+      "validation": "Independent AppKit inspection confirms NSScreen 44, 1280x720 at 60 Hz."
+    },
+    {
+      "test": "Apply standard 1280x720 60 Hz (repeat)",
+      "user_result": "Initial repeat was not observed. Third run with a 10-second announced countdown: user confirms neither removal nor activation flashed."
+    },
+    {
+      "test": "Change same output from 1280x720 to 1920x720",
+      "user_result": "MSI flashes."
+    },
+    {
+      "test": "Enable 1280x480 60 Hz, aspect-correct 8:3 candidate",
+      "user_result": "MSI flashes; rejected as non-flashing workaround."
+    }
+  ],
+  "limitations": [
+    "Older observer ran a CF loop without AppKit event dispatch; new display mode cache and callbacks were incomplete. The fixed observer uses NSApplication.run.",
+    "Old synchronous IORegistry polling had a measured maximum gap of 1546.562 ms; do not use it to exclude brief transitions. The current observer separates registry work from CG polling.",
+    "Unchanged reported modes and link parameters do not prove uninterrupted physical output.",
+    "No reliable HDR preference inference is made from the undocumented SkyLight getter."
+  ],
+  "result": "No aspect-correct non-flashing workaround found. User requests stopping resolution tests and implementing five modes plus system follow. Production lifecycle unchanged.",
+  "issue": "https://github.com/zenhsieh/msi-xpander-driver/issues/1"
+}
