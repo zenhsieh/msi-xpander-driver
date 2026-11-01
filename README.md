@@ -68,6 +68,13 @@ encoder/quality controls. To select hardware JPEG for kiosk frames, use
 `MSI_KIOSK_ENCODER=vt` and `MSI_VT_QUALITY=1.0`; the menu-bar app configures this
 automatically. See `kiosk/README.md` for the helper path.
 
+## Linux GNOME Wayland
+
+The initial Linux backend creates a Mutter virtual monitor and sends its
+PipeWire frames over the shared bulk transport. Linux compilation and synthetic
+capture tests pass; physical GNOME/panel validation is pending. See
+[Linux setup and test steps](linux/README.md).
+
 ## Build
 
 ```sh

@@ -1,0 +1,5 @@
+# Local active-seat access to this panel only, including after re-enumeration.
+# Reload rules and replug after installing. No world-writable USB permissions.
+SUBSYSTEM=="usb", ATTR{idVendor}=="0db0", ATTR{idProduct}=="7920", TAG+="uaccess"
+SUBSYSTEM=="usb", ATTR{idVendor}=="0db0", ATTR{idProduct}=="7885", TAG+="uaccess"
+SUBSYSTEM=="hidraw", ATTRS{idVendor}=="0db0", ATTRS{idProduct}=="7920", TAG+="uaccess"
