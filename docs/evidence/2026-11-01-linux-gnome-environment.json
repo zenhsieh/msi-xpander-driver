@@ -1,0 +1,6 @@
+{
+  "recorded_at": "2026-11-01T14:27:29.874073+08:00",
+  "test_image": "sha256:cbb57b3465272d3739320aaf6090f526632246d47edd6575f8d74882e708d29c arm64",
+  "base": "rust:1.90-slim-trixie",
+  "scope": "Linux compile/unit tests and actual GStreamer synthetic capture. Real GNOME monitor/USB validation pending."
+}

@@ -379,11 +379,19 @@ pub fn kiosk(path: &Path) -> Result<()> {
 
 pub fn desktop(helper: Option<&Path>) -> Result<()> {
     use std::io::Read;
-    ensure!(cfg!(target_os="macos"), "Desktop bridge requires macOS");
-    let default = std::path::PathBuf::from(std::env::var("HOME")?)
-        .join("Applications/MSI Xpander Desktop.app/Contents/MacOS/MSIXpanderDesktop");
+    ensure!(cfg!(any(target_os="macos", target_os="linux")), "Desktop bridge supports macOS and Linux");
+    let default = if cfg!(target_os="linux") {
+        let installed = std::path::PathBuf::from(std::env::var("HOME")?)
+            .join(".local/libexec/msi-xpander/gnome-bridge.py");
+        if installed.is_file() { installed } else {
+            std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("linux/gnome-bridge.py")
+        }
+    } else {
+        std::path::PathBuf::from(std::env::var("HOME")?)
+            .join("Applications/MSI Xpander Desktop.app/Contents/MacOS/MSIXpanderDesktop")
+    };
     let transport_env = std::env::var("MSI_DESKTOP_TRANSPORT").ok();
-    let transport_kind = DesktopTransportKind::parse(transport_env.as_deref())?;
+    let transport_kind = DesktopTransportKind::parse(transport_env.as_deref().or(if cfg!(target_os="linux") { Some("bulk") } else { None }))?;
     let fps_env = std::env::var("MSI_DESKTOP_FPS").ok();
     let mut pacer = if transport_kind == DesktopTransportKind::Bulk {
         Some(SendPacer::new(bulk_frame_period(fps_env.as_deref())?, Instant::now()))
@@ -395,7 +403,7 @@ pub fn desktop(helper: Option<&Path>) -> Result<()> {
         helper_command.env("MSI_DESKTOP_FPS", "30");
     }
     let mut bridge = DesktopBridge(helper_command.stdout(std::process::Stdio::piped())
-        .spawn().context("Start macOS desktop bridge (build with bash macos/build-bridge.sh)")?);
+        .spawn().context("Start desktop bridge (macOS: macos/build-bridge.sh; Linux: linux/README.md)")?);
     let mut input = bridge.0.stdout.take().context("Open desktop frame pipe")?;
     // Read one frame before touching USB: a missing screen-recording permission
     // or virtual-display failure must not alter the panel's mode.
@@ -544,7 +552,11 @@ fn open_display(context: &Context) -> Result<UsbTransport> {
         }
     }
     ensure!(valid_interface, "USB interface does not match the recorded bulk display protocol");
-    handle.claim_interface(0).context("Claim vendor interface 0. This prototype does not detach drivers or alter security settings.")?;
+    // Only the validated vendor bulk interface is claimed. On Linux libusb
+    // restores its prior kernel binding when this handle releases the interface.
+    #[cfg(target_os="linux")]
+    handle.set_auto_detach_kernel_driver(true).context("Enable scoped Linux interface detach/reattach")?;
+    handle.claim_interface(0).context("Claim vendor interface 0 (Linux permissions: linux/70-msi-xpander.rules)")?;
     Ok(UsbTransport { handle })
 }
 
@@ -576,7 +588,7 @@ pub fn show_420(prime: bool) -> Result<()> {
 }
 
 fn show_internal(path: Option<&Path>, diagnostic: bool, use_420: bool, prime: bool) -> Result<()> {
-    ensure!(cfg!(target_os = "macos"), "Hardware sending is currently enabled only on macOS; do not replace the Windows MSI driver");
+    ensure!(cfg!(any(target_os="macos", target_os="linux")), "Bulk sending supports macOS and Linux; do not replace the Windows MSI driver");
     let image = if let Some(path) = path {
         DynamicImage::ImageRgb8(image::open(path).with_context(|| format!("Open {}", path.display()))?.resize_exact(1920,720,image::imageops::FilterType::Lanczos3).to_rgb8())
     } else { DynamicImage::ImageRgb8(test_pattern()) };

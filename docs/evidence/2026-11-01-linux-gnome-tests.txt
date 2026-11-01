@@ -1,0 +1,169 @@
+Linux container; no panel/real GNOME session access.
+    Updating crates.io index
+ Downloading crates ...
+  Downloaded bitflags v2.13.2
+  Downloaded adler2 v2.0.1
+  Downloaded anyhow v1.0.104
+  Downloaded num-iter v0.1.46
+  Downloaded itoa v1.0.18
+  Downloaded rand_chacha v0.3.1
+  Downloaded crypto-common v0.1.7
+  Downloaded errno v0.3.14
+  Downloaded byteorder-lite v0.1.0
+  Downloaded signature v2.2.0
+  Downloaded subtle v2.6.1
+  Downloaded cfg-if v1.0.5
+  Downloaded generic-array v0.14.7
+  Downloaded version_check v0.9.5
+  Downloaded fastrand v2.5.0
+  Downloaded fdeflate v0.3.7
+  Downloaded spki v0.7.3
+  Downloaded zeroize v1.9.1
+  Downloaded spin v0.9.9
+  Downloaded zune-core v0.5.3
+  Downloaded simd-adler32 v0.3.10
+  Downloaded getrandom v0.2.17
+  Downloaded zmij v1.0.23
+  Downloaded smallvec v1.16.4
+  Downloaded ppv-lite86 v0.2.21
+  Downloaded pkcs1 v0.7.5
+  Downloaded once_cell v1.21.4
+  Downloaded shlex v2.0.1
+  Downloaded lazy_static v1.5.1
+  Downloaded pkg-config v0.3.34
+  Downloaded pem-rfc7468 v0.7.0
+  Downloaded rand_core v0.6.4
+  Downloaded pkcs8 v0.10.2
+  Downloaded num-integer v0.1.47
+  Downloaded digest v0.10.7
+  Downloaded tempfile v3.27.0
+  Downloaded rusb v0.9.4
+  Downloaded jpeg-encoder v0.7.1
+  Downloaded num-traits v0.2.19
+  Downloaded find-msvc-tools v0.1.15
+  Downloaded bytemuck v1.25.2
+  Downloaded serde_core v1.0.229
+  Downloaded miniz_oxide v0.8.9
+  Downloaded crc32fast v1.5.3
+  Downloaded rand v0.8.8
+  Downloaded rsa v0.9.10
+  Downloaded zune-jpeg v0.5.15
+  Downloaded num-bigint-dig v0.8.6
+  Downloaded typenum v1.20.1
+  Downloaded memchr v2.8.3
+  Downloaded serde_json v1.0.154
+  Downloaded cc v1.10.0
+  Downloaded png v0.18.1
+  Downloaded zlib-rs v0.6.8
+  Downloaded moxcms v0.8.1
+  Downloaded libm v0.2.16
+  Downloaded hidapi v2.6.7
+  Downloaded flate2 v1.1.10
+  Downloaded zerocopy v0.8.63
+  Downloaded libusb1-sys v0.7.0
+  Downloaded image v0.25.10
+  Downloaded der v0.7.10
+  Downloaded miniz_oxide v0.9.1
+  Downloaded getrandom v0.4.3
+  Downloaded const-oid v0.9.6
+  Downloaded base64ct v1.8.3
+  Downloaded autocfg v1.5.1
+  Downloaded rustix v1.1.6
+  Downloaded pxfm v0.1.30
+  Downloaded libc v0.2.191
+  Downloaded linux-raw-sys v0.12.1
+   Compiling libc v0.2.191
+   Compiling libm v0.2.16
+   Compiling zerocopy v0.8.63
+   Compiling num-traits v0.2.19
+   Compiling generic-array v0.14.7
+   Compiling crc32fast v1.5.3
+   Compiling libusb1-sys v0.7.0
+   Compiling serde_core v1.0.229
+   Compiling rustix v1.1.6
+   Compiling num-bigint-dig v0.8.6
+   Compiling getrandom v0.4.3
+   Compiling anyhow v1.0.104
+   Compiling serde_json v1.0.154
+   Compiling hidapi v2.6.7
+   Compiling flate2 v1.1.10
+   Compiling png v0.18.1
+   Compiling crypto-common v0.1.7
+   Compiling digest v0.10.7
+   Compiling getrandom v0.2.17
+   Compiling rand_core v0.6.4
+   Compiling num-integer v0.1.47
+   Compiling moxcms v0.8.1
+   Compiling signature v2.2.0
+   Compiling num-iter v0.1.46
+   Compiling tempfile v3.27.0
+   Compiling rusb v0.9.4
+   Compiling ppv-lite86 v0.2.21
+   Compiling rand_chacha v0.3.1
+   Compiling rand v0.8.8
+   Compiling image v0.25.10
+   Compiling rsa v0.9.10
+   Compiling msi-xpander v0.1.0 (/src)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 7.75s
+     Running unittests src/lib.rs (target/linux-container/debug/deps/msi_xpander-7a0c93d4db810217)
+
+running 11 tests
+test display_compatibility_tests::malformed_jpeg_is_rejected ... ok
+test display_compatibility_tests::dashboard_profile_is_baseline_420 ... ok
+test tests::incomplete_escape_is_rejected ... ok
+test tests::escaped_delimiters_round_trip ... ok
+test display_compatibility_tests::dashboard_reports_match_all_51_captured_reports ... ok
+test display_compatibility_tests::official_extended_frame_is_baseline_420 ... ok
+test tests::invalid_checksum_is_rejected ... ok
+test tests::incomplete_jpeg_is_rejected_before_usb ... ok
+test tests::short_header_is_rejected ... ok
+test tests::invalid_padding_is_rejected ... ok
+test tests::captured_protocol_and_rsa_proof_match ... ok
+
+test result: ok. 11 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/main.rs (target/linux-container/debug/deps/msi_xpander-707863ca4b0123ee)
+
+running 19 tests
+test desktop_frame::tests::raw_frames_keep_the_local_encode_timing_path ... ok
+test desktop_frame::tests::malformed_raw_frames_are_rejected ... ok
+test hardware::desktop_bulk_tests::bulk_frames_preserve_jpeg_and_increment_wire_sequence ... ok
+test hardware::desktop_bulk_tests::frame_pacing_spaces_sends_without_bursts_after_a_stall ... ok
+test hardware::desktop_bulk_tests::failed_bulk_payload_stops_frame_and_new_session_restarts_sequence ... ok
+test hardware::desktop_bulk_tests::kiosk_encoder_settings_validate_before_opening_usb ... ok
+test desktop_frame::tests::raw_channel_order_and_capture_time_are_preserved ... ok
+test desktop_frame::tests::wake_epoch_is_preserved_without_becoming_pixel_data ... ok
+test hardware::desktop_bulk_tests::transport_and_frame_rate_settings_reject_unknown_or_unsafe_values ... ok
+test desktop_frame::tests::hardware_jpeg_format_is_checked_on_every_frame ... ok
+test jpeg_profile_cli_tests::progressive_frame_header_is_rejected ... ok
+test jpeg_profile_cli_tests::fixture_profile_reports_dimensions_sampling_and_baseline ... ok
+test hardware::desktop_bulk_tests::kiosk_quality_preserves_default_and_accepts_baseline_420_at_maximum ... ok
+test hardware::desktop_bulk_tests::kiosk_transport_defaults_to_hid_and_validates_before_connecting ... ok
+test desktop_frame::tests::hardware_jpeg_is_preserved_with_timestamp_epoch_and_encode_duration ... ok
+test desktop_frame::tests::bgra_pixels_encode_as_blue_and_red_without_channel_reversal ... ok
+test hardware::desktop_bulk_tests::kiosk_rejects_incompatible_helper_output_before_usb ... ok
+test hardware::desktop_bulk_tests::kiosk_helper_spools_large_output_and_propagates_failure ... ok
+test jpeg420::tests::startup_and_full_quality_frames_are_decodable_baseline_420 ... ok
+
+test result: ok. 19 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.79s
+
+     Running tests/handshake.rs (target/linux-container/debug/deps/handshake-6bc544de6e4400a4)
+
+running 3 tests
+test short_write_stops_immediately ... ok
+test bad_echo_stops_before_device_proof_and_jpeg ... ok
+test complete_handshake_reproduces_recorded_order ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+   Doc-tests msi_xpander
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+...
+----------------------------------------------------------------------
+Ran 3 tests in 0.223s
+
+OK
