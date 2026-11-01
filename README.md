@@ -20,37 +20,19 @@ exact validation status of each path.
 | Extended-mode bulk streaming (`show420`, `show-prime420`) | confirmed on the panel 2026-10-31 (`docs/evidence/2026-10-31-mac-bulk-works.md`); desktop transport now selectable with `MSI_DESKTOP_TRANSPORT` |
 | Kiosk mode (`kiosk frame.png`, any PNG source) | HID default/fallback; `MSI_KIOSK_TRANSPORT=bulk` shares the extended-mode endpoint with bulk desktop, allowing content-producer switches without a physical replug; see `kiosk/README.md` |
 
-## Why the cursor is not as smooth as on Windows
+## macOS menu-bar app and hardware JPEG
 
-The current macOS desktop path captures and encodes each full frame as JPEG,
-then sends it over the Dashboard HID channel. A typical frame is about 100 KB:
-roughly 100 HID reports of 1000 bytes each. Each frame must be sent again when
-the picture changes, so cursor motion can lag or look less fluid. The official
-Windows software also sends full JPEG frames (about 100–200 KB each, no separate
-cursor channel; see `docs/evidence/2026-10-31-windows-mouse-capture.md`), but over
-the extended mode's bulk endpoint at a steady rate. This project now offers
-paced bulk desktop sending as an option; capture/encode cost and physical cursor
-smoothness still need to be compared at 30 and 60 fps.
+The menu-bar app switches between Kiosk and extended desktop using bulk USB
+and verified VideoToolbox hardware JPEG. The panel tests confirmed clearer kiosk
+output and smoother desktop cursor motion. Kiosk quality defaults to 1.0; the
+live desktop test window is off by default. See [installation and packaging](macos/MENU-BAR.md).
 
-Select `MSI_DESKTOP_TRANSPORT=bulk` to use that bulk endpoint for desktop frames.
-The first real desktop frame uses the configured JPEG quality, without a separate
-quality-1 startup image. A Dashboard-mode panel is switched once without replaying
-the bundled Dashboard JPEG; reconnecting an already extended-mode panel only reopens and
-authenticates the bulk session. Each new session starts frame sequence `0x100000`.
-HID remains the default and can be selected explicitly with `MSI_DESKTOP_TRANSPORT=hid`.
-
-These settings can help tune the current desktop path:
-
-| Setting | Expected effect |
-|---|---|
-| `MSI_DESKTOP_MODE=native` | Use a 1920×720 display mode without HiDPI backing; it can reduce capture and encoding work. |
-| `MSI_DESKTOP_JPEG_QUALITY` | Lower quality reduces JPEG size and HID traffic, at the cost of image detail (20–95; default 55). |
-| `MSI_DESKTOP_TRANSPORT` | `hid` is the default/fallback; `bulk` enables the extended-mode endpoint. |
-| `MSI_DESKTOP_FPS` | Capture ceiling (1–60; HID default 60, bulk default 30). Bulk also spaces send starts at this ceiling and selects the latest frame after waiting, without catch-up bursts. |
-
-Bulk write failures drop the session and retry after one second. The latest-frame
-capture slot keeps updating while USB is unavailable; recovery does not queue old
-frames or automatically switch transports.
+The command-line default remains HID for compatibility. The older HID path
+sends full frames in small reports and can visibly lag; select bulk for the
+faster path. Capture activity and USB transfer time affect the achieved update
+frequency, so a 60-per-second setting is a ceiling rather than a guarantee.
+See [hardware desktop measurements](docs/evidence/2026-11-01-vt-jpeg-bridge.md)
+and [hardware kiosk validation](docs/evidence/2026-11-01-kiosk-vt-jpeg.md).
 
 ## Switch between kiosk and desktop without a USB replug
 
@@ -82,7 +64,9 @@ Bulk kiosk sends the PNG at native 1920×720 as baseline JPEG 4:2:0. Set
 `MSI_KIOSK_JPEG_QUALITY` from 1 to 100 to tune its JPEG detail/size; the default is
 85, preserving previous kiosk output. This quality setting belongs to kiosk's
 existing Rust encoder. It is independent of the desktop bridge's VideoToolbox
-encoder/quality controls, and does not enable VT encoding for kiosk frames.
+encoder/quality controls. To select hardware JPEG for kiosk frames, use
+`MSI_KIOSK_ENCODER=vt` and `MSI_VT_QUALITY=1.0`; the menu-bar app configures this
+automatically. See `kiosk/README.md` for the helper path.
 
 ## Build
 
