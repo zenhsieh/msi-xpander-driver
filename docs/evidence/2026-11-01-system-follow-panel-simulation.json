@@ -1,0 +1,176 @@
+{
+  "recorded_at": "2026-11-01T15:20:11.745858+08:00",
+  "scope": "Panel/controller simulation only; no distributed Apple notifications posted and no Mac sleep/screensaver triggered. Actual OS notification delivery remains pending user test.",
+  "actions": [
+    {
+      "action": "status",
+      "input": null,
+      "exit": 0,
+      "elapsed_s": 0.042,
+      "status": {
+        "ok": true,
+        "mode": "kiosk",
+        "selected_mode": "kiosk",
+        "following_mac": false,
+        "system_state": {
+          "screensaver": false,
+          "screen_sleep": false,
+          "system_sleep": false
+        },
+        "desktop_fps": 60,
+        "desktop_quality": 1.0,
+        "kiosk_quality": 1.0,
+        "test_window": false,
+        "last_error": "",
+        "launch_at_login": true,
+        "logs_path": "/Users/chenyuhsieh/Library/Logs/digiter-xpander-kiosk",
+        "configured": true
+      }
+    },
+    {
+      "action": "system-state",
+      "input": {
+        "screensaver": true,
+        "screen_sleep": false,
+        "system_sleep": false
+      },
+      "exit": 0,
+      "elapsed_s": 0.852,
+      "status": {
+        "ok": true,
+        "mode": "screensaver",
+        "selected_mode": "kiosk",
+        "following_mac": true,
+        "system_state": {
+          "screensaver": true,
+          "screen_sleep": false,
+          "system_sleep": false
+        },
+        "desktop_fps": 60,
+        "desktop_quality": 1.0,
+        "kiosk_quality": 1.0,
+        "test_window": false,
+        "last_error": "",
+        "launch_at_login": true,
+        "logs_path": "/Users/chenyuhsieh/Library/Logs/digiter-xpander-kiosk",
+        "configured": true
+      }
+    },
+    {
+      "action": "system-state",
+      "input": {
+        "screensaver": true,
+        "screen_sleep": true,
+        "system_sleep": false
+      },
+      "exit": 0,
+      "elapsed_s": 0.273,
+      "status": {
+        "ok": true,
+        "mode": "stopped",
+        "selected_mode": "kiosk",
+        "following_mac": true,
+        "system_state": {
+          "screensaver": true,
+          "screen_sleep": true,
+          "system_sleep": false
+        },
+        "desktop_fps": 60,
+        "desktop_quality": 1.0,
+        "kiosk_quality": 1.0,
+        "test_window": false,
+        "last_error": "",
+        "launch_at_login": true,
+        "logs_path": "/Users/chenyuhsieh/Library/Logs/digiter-xpander-kiosk",
+        "configured": true
+      }
+    },
+    {
+      "action": "system-state",
+      "input": {
+        "screensaver": false,
+        "screen_sleep": true,
+        "system_sleep": false
+      },
+      "exit": 0,
+      "elapsed_s": 0.081,
+      "status": {
+        "ok": true,
+        "mode": "stopped",
+        "selected_mode": "kiosk",
+        "following_mac": true,
+        "system_state": {
+          "screensaver": false,
+          "screen_sleep": true,
+          "system_sleep": false
+        },
+        "desktop_fps": 60,
+        "desktop_quality": 1.0,
+        "kiosk_quality": 1.0,
+        "test_window": false,
+        "last_error": "",
+        "launch_at_login": true,
+        "logs_path": "/Users/chenyuhsieh/Library/Logs/digiter-xpander-kiosk",
+        "configured": true
+      }
+    },
+    {
+      "action": "system-state",
+      "input": {
+        "screensaver": false,
+        "screen_sleep": false,
+        "system_sleep": false
+      },
+      "exit": 0,
+      "elapsed_s": 0.246,
+      "status": {
+        "ok": true,
+        "mode": "kiosk",
+        "selected_mode": "kiosk",
+        "following_mac": false,
+        "system_state": {
+          "screensaver": false,
+          "screen_sleep": false,
+          "system_sleep": false
+        },
+        "desktop_fps": 60,
+        "desktop_quality": 1.0,
+        "kiosk_quality": 1.0,
+        "test_window": false,
+        "last_error": "",
+        "launch_at_login": true,
+        "logs_path": "/Users/chenyuhsieh/Library/Logs/digiter-xpander-kiosk",
+        "configured": true
+      }
+    },
+    {
+      "action": "system-state",
+      "input": {
+        "screensaver": false,
+        "screen_sleep": false,
+        "system_sleep": false
+      },
+      "exit": 0,
+      "elapsed_s": 0.088,
+      "status": {
+        "ok": true,
+        "mode": "kiosk",
+        "selected_mode": "kiosk",
+        "following_mac": false,
+        "system_state": {
+          "screensaver": false,
+          "screen_sleep": false,
+          "system_sleep": false
+        },
+        "desktop_fps": 60,
+        "desktop_quality": 1.0,
+        "kiosk_quality": 1.0,
+        "test_window": false,
+        "last_error": "",
+        "launch_at_login": true,
+        "logs_path": "/Users/chenyuhsieh/Library/Logs/digiter-xpander-kiosk",
+        "configured": true
+      }
+    }
+  ]
+}

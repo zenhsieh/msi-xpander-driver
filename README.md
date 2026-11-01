@@ -22,19 +22,20 @@ exact validation status of each path.
 
 ## macOS menu-bar app and hardware JPEG
 
-The menu-bar app offers remote-source Kiosk, a Mac native clock/calendar/system
-instrument panel, a native clock screensaver, and extended desktop using bulk USB
-and verified VideoToolbox hardware JPEG. The panel tests confirmed clearer kiosk
-output and smoother desktop cursor motion. Kiosk quality defaults to 1.0; the
-live desktop test window is off by default. Stop sends black before releasing
-USB. Native kiosk modes draw without a virtual monitor or screen capture. See [installation and packaging](macos/MENU-BAR.md).
+The **顯示** submenu offers remote Kiosk, extended desktop, a real macOS widgets
+desktop, a native clock screensaver, and screen Off (black frame). Manual choices
+control only Xpander. Screen saver and screen/system sleep/wake events on the Mac
+automatically override and then restore the selected panel mode. A manually
+selected Off stays off after wake. Widget mode is interactive macOS desktop,
+not an AppKit picture of widgets; add widgets through macOS's Edit Widgets UI.
+See [installation, modes and packaging](macos/MENU-BAR.md).
 
-The command-line default remains HID for compatibility. The older HID path
-sends full frames in small reports and can visibly lag; select bulk for the
-faster path. Capture activity and USB transfer time affect the achieved update
-frequency, so a 60-per-second setting is a ceiling rather than a guarantee.
-See [hardware desktop measurements](docs/evidence/2026-11-01-vt-jpeg-bridge.md)
-and [hardware kiosk validation](docs/evidence/2026-11-01-kiosk-vt-jpeg.md).
+The Mac app uses bulk USB and verified VideoToolbox hardware JPEG. The older
+command-line HID default remains for compatibility. Capture activity and USB
+transfer time affect achieved update frequency: the selected setting is a ceiling.
+The physical MSI monitor can briefly blank when activating certain virtual
+modes; see [issue #1](https://github.com/zenhsieh/msi-xpander-driver/issues/1).
+No preallocated/retained hidden output or HDR-setting rewrite is used as a fix.
 
 ## Switch between kiosk and desktop without a USB replug
 

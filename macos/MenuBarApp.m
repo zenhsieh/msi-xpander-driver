@@ -25,6 +25,11 @@
 @property(nonatomic) NSUInteger commandGeneration;
 @property(nonatomic) BOOL terminationPending;
 @property(nonatomic) BOOL readyToQuit;
+@property(nonatomic) BOOL macScreensaverRunning;
+@property(nonatomic) BOOL macScreensSleeping;
+@property(nonatomic) BOOL macSystemSleeping;
+@property(nonatomic, copy) NSString *pendingSystemState;
+@property(nonatomic, strong) NSTimer *systemStateTimer;
 @end
 
 @implementation XpanderMenuController
@@ -41,11 +46,11 @@
 
 - (NSString *)modeTitle {
     NSString *mode=[self stringForKey:@"mode"];
-    if ([mode isEqualToString:@"kiosk"]) return @"Kiosk";
+    if ([mode isEqualToString:@"kiosk"]) return @"遠端 Kiosk";
     if ([mode isEqualToString:@"desktop"]) return @"延伸桌面";
-    if ([mode isEqualToString:@"native-kiosk"]) return @"Mac 原生儀表板";
-    if ([mode isEqualToString:@"screensaver"]) return @"螢幕保護（原生時鐘）";
-    if ([mode isEqualToString:@"stopped"]) return @"停止輸出";
+    if ([mode isEqualToString:@"native-kiosk"]) return @"原生 Kiosk";
+    if ([mode isEqualToString:@"screensaver"]) return @"螢幕保護模式";
+    if ([mode isEqualToString:@"stopped"]) return @"關閉螢幕";
     return @"讀取狀態中…";
 }
 
@@ -54,10 +59,11 @@
     if ([self.currentAction isEqualToString:@"resume"]) return @"正在恢復上次模式…";
     if ([self.currentAction isEqualToString:@"kiosk"]) return @"正在啟動 Kiosk…";
     if ([self.currentAction isEqualToString:@"desktop"]) return @"正在啟動延伸桌面…";
-    if ([self.currentAction isEqualToString:@"native-kiosk"]) return @"正在啟動 Mac 原生儀表板…";
+    if ([self.currentAction isEqualToString:@"native-kiosk"]) return @"正在啟動 macOS 小工具桌面…";
     if ([self.currentAction isEqualToString:@"screensaver"]) return @"正在啟動螢幕保護…";
     if ([self.currentAction isEqualToString:@"stop"]) return @"正在停止輸出…";
     if ([self.currentAction isEqualToString:@"restart"]) return @"正在重新啟動輸出…";
+    if ([self.currentAction isEqualToString:@"system-state"]) return @"正在同步 Mac 顯示狀態…";
     return @"正在套用設定…";
 }
 
@@ -119,15 +125,23 @@
     [menu addItem:self.errorHeader];
     [menu addItem:NSMenuItem.separatorItem];
 
-    NSArray *modes=@[@[@"kiosk",@"Kiosk（遠端來源）"],@[@"native-kiosk",@"Mac 原生儀表板"],@[@"screensaver",@"螢幕保護（原生時鐘）"],@[@"desktop",@"延伸桌面"],@[@"stop",@"停止輸出（黑畫面）"]];
+    NSMenuItem *displayParent=[[NSMenuItem alloc] initWithTitle:@"顯示" action:nil keyEquivalent:@""];
+    NSMenu *displayMenu=[[NSMenu alloc] initWithTitle:@"顯示"];
+    displayMenu.autoenablesItems=NO;
+    NSArray *modes=@[@[@"kiosk",@"遠端 Kiosk"],@[@"desktop",@"延伸桌面"],@[@"native-kiosk",@"原生 Kiosk"],@[@"screensaver",@"螢幕保護模式"],@[@"stop",@"關閉螢幕"]];
     for (NSArray<NSString *> *mode in modes) {
         NSMenuItem *item=[self actionItem:mode[1] action:mode[0] value:nil];
         NSImage *radio=[NSImage imageWithSystemSymbolName:@"circle.fill" accessibilityDescription:nil];
         radio.size=NSMakeSize(8,8); radio.template=YES;
         item.onStateImage=radio;
         self.modeItems[[mode[0] isEqualToString:@"stop"] ? @"stopped" : mode[0]]=item;
-        [menu addItem:item];
+        if ([mode[0] isEqualToString:@"native-kiosk"]) item.toolTip=@"真正的 macOS 小工具桌面，可移入滑鼠互動。";
+        if ([mode[0] isEqualToString:@"stop"]) item.toolTip=@"送出黑畫面並停止更新；面板仍由 USB 供電。";
+        [displayMenu addItem:item];
     }
+    displayParent.submenu=displayMenu;
+    [self.controlItems addObject:displayParent];
+    [menu addItem:displayParent];
     [menu addItem:NSMenuItem.separatorItem];
     [menu addItem:[self settingsMenu:@"桌面更新頻率" action:@"set-desktop-fps" values:@[@"30",@"60"] items:self.fpsItems suffix:@" 次"]];
     [menu addItem:[self settingsMenu:@"桌面畫質" action:@"set-desktop-quality" values:@[@"0.75",@"0.9",@"1.0"] items:self.desktopQualityItems suffix:@""]];
@@ -136,6 +150,9 @@
     sourceItem.target=self;
     [self.controlItems addObject:sourceItem];
     [menu addItem:sourceItem];
+    NSMenuItem *widgetsHelp=[[NSMenuItem alloc] initWithTitle:@"設定原生 Kiosk 小工具…" action:@selector(showWidgetsHelp:) keyEquivalent:@""];
+    widgetsHelp.target=self;
+    [self.controlItems addObject:widgetsHelp];[menu addItem:widgetsHelp];
     NSMenuItem *testOptions=[[NSMenuItem alloc] initWithTitle:@"測試選項" action:nil keyEquivalent:@""];
     NSMenu *testMenu=[[NSMenu alloc] initWithTitle:@"測試選項"];
     testMenu.autoenablesItems=NO;
@@ -161,7 +178,8 @@
     [menu addItem:self.quitItem];
     self.statusItem.menu=menu;
     [self refreshMenu];
-    [self runAction:@"resume" value:nil terminating:NO];
+    [self observeMacDisplayState];
+    [self flushSystemState];
     self.pollTimer=[NSTimer timerWithTimeInterval:2 repeats:YES block:^(NSTimer *timer) {
         (void)timer;
         [self requestStatus];
@@ -172,6 +190,7 @@
 - (void)refreshMenu {
     BOOL transition=self.terminationPending || self.busy;
     NSString *title=transition ? [self operationTitle] : [NSString stringWithFormat:@"目前模式：%@",[self modeTitle]];
+    if (!transition && [self.state[@"following_mac"] boolValue]) title=[title stringByAppendingString:@"（跟隨 Mac）"];
     self.statusHeader.title=title;
     self.statusItem.button.toolTip=[NSString stringWithFormat:@"MSI Xpander — %@",title];
     BOOL enabled=!self.busy && !self.terminationPending;
@@ -234,7 +253,7 @@
 }
 
 - (void)showControllerError:(NSString *)message action:(NSString *)action {
-    BOOL desktopRequest=[action isEqualToString:@"desktop"] || [action isEqualToString:@"resume"];
+    BOOL desktopRequest=[action isEqualToString:@"desktop"] || [action isEqualToString:@"native-kiosk"] || [action isEqualToString:@"resume"];
     BOOL permissionError=message.length && [message rangeOfString:@"螢幕錄製"].location!=NSNotFound;
     if (!desktopRequest || !permissionError) {
         [self showError:message];
@@ -278,6 +297,79 @@
         [self runAction:@"set-frame-cmd" value:command terminating:NO];
         return;
     }
+}
+
+- (void)showWidgetsHelp:(id)sender {
+    (void)sender;
+    NSAlert *alert=[NSAlert new];
+    alert.messageText=@"設定 macOS 小工具桌面";
+    alert.informativeText=@"先從「顯示 → 原生 Kiosk」開啟小工具桌面，再把滑鼠移到 Xpander。於桌面按右鍵，選「編輯小工具」，加入時鐘、行事曆等小工具。小工具與位置由 macOS 管理；此模式使用真正的桌面，可以點擊與捲動。";
+    [alert addButtonWithTitle:@"了解"];
+    [NSApp activateIgnoringOtherApps:YES];[alert runModal];
+}
+
+- (BOOL)physicalScreensAsleep {
+    CGDirectDisplayID displays[32];uint32_t count=0,physical=0,asleep=0;
+    if (CGGetOnlineDisplayList(32,displays,&count)!=kCGErrorSuccess) return NO;
+    for (uint32_t i=0;i<count;i++) {
+        // Both app-owned virtual identities are excluded from physical power state.
+        if (CGDisplayVendorNumber(displays[i])==3504 &&
+            (CGDisplayModelNumber(displays[i])==31008 || CGDisplayModelNumber(displays[i])==31009)) continue;
+        physical++;if(CGDisplayIsAsleep(displays[i])) asleep++;
+    }
+    return physical>0 && asleep==physical;
+}
+
+- (void)queueSystemState {
+    NSDictionary *snapshot=@{@"screensaver":@(self.macScreensaverRunning),
+        @"screen_sleep":@(self.macScreensSleeping),@"system_sleep":@(self.macSystemSleeping)};
+    NSData *data=[NSJSONSerialization dataWithJSONObject:snapshot options:0 error:NULL];
+    self.pendingSystemState=[[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
+    [self.systemStateTimer invalidate];
+    self.systemStateTimer=[NSTimer timerWithTimeInterval:.15 repeats:NO block:^(NSTimer *timer){
+        (void)timer;[self flushSystemState];
+    }];
+    [NSRunLoop.mainRunLoop addTimer:self.systemStateTimer forMode:NSRunLoopCommonModes];
+}
+
+- (void)flushSystemState {
+    if (self.busy || self.terminationPending || !self.pendingSystemState) return;
+    NSString *snapshot=self.pendingSystemState;self.pendingSystemState=nil;
+    [self runAction:@"system-state" value:snapshot terminating:NO];
+}
+
+- (void)macDisplayStateChanged:(NSNotification *)note {
+    if (!NSThread.isMainThread) {
+        dispatch_async(dispatch_get_main_queue(),^{[self macDisplayStateChanged:note];});return;
+    }
+    NSString *name=note.name;
+    // A Settings preview is not the system's actual idle screensaver.
+    if ([note.object isKindOfClass:NSString.class] && [note.object isEqual:@"runFromPref"]) return;
+    if ([name isEqual:@"com.apple.screensaver.didstart"]) self.macScreensaverRunning=YES;
+    else if ([name isEqual:@"com.apple.screensaver.didstop"]) self.macScreensaverRunning=NO;
+    else if ([name isEqual:NSWorkspaceScreensDidSleepNotification]) self.macScreensSleeping=YES;
+    else if ([name isEqual:NSWorkspaceScreensDidWakeNotification]) self.macScreensSleeping=NO;
+    else if ([name isEqual:NSWorkspaceWillSleepNotification]) self.macSystemSleeping=YES;
+    else if ([name isEqual:NSWorkspaceDidWakeNotification]) self.macSystemSleeping=NO;
+    [self queueSystemState];
+    if ([name isEqual:NSWorkspaceScreensDidWakeNotification] || [name isEqual:NSWorkspaceDidWakeNotification]) {
+        // Coalesce another sample after WindowServer/USB have had time to settle.
+        dispatch_after(dispatch_time(DISPATCH_TIME_NOW,3*NSEC_PER_SEC),dispatch_get_main_queue(),^{
+            if (!self.terminationPending) [self queueSystemState];
+        });
+    }
+}
+
+- (void)observeMacDisplayState {
+    NSNotificationCenter *workspace=NSWorkspace.sharedWorkspace.notificationCenter;
+    for (NSNotificationName name in @[NSWorkspaceScreensDidSleepNotification,NSWorkspaceScreensDidWakeNotification,
+                                      NSWorkspaceWillSleepNotification,NSWorkspaceDidWakeNotification])
+        [workspace addObserver:self selector:@selector(macDisplayStateChanged:) name:name object:nil];
+    for (NSString *name in @[@"com.apple.screensaver.didstart",@"com.apple.screensaver.didstop"])
+        [NSDistributedNotificationCenter.defaultCenter addObserver:self selector:@selector(macDisplayStateChanged:)
+             name:name object:nil suspensionBehavior:NSNotificationSuspensionBehaviorDeliverImmediately];
+    self.macScreensSleeping=[self physicalScreensAsleep];
+    [self queueSystemState];
 }
 
 - (void)executeControllerAction:(NSString *)action value:(NSString *)value
@@ -335,7 +427,7 @@
     // Ignore backend fields that have no visual representation (for example a
     // timestamp or process counter) so they cannot cause periodic menu redraws.
     for (NSString *key in @[@"mode",@"desktop_fps",@"desktop_quality",@"kiosk_quality",
-                            @"launch_at_login",@"test_window",@"last_error",@"logs_path",@"source_cmd"]) {
+                            @"launch_at_login",@"test_window",@"last_error",@"logs_path",@"source_cmd",@"selected_mode",@"following_mac",@"system_state"]) {
         id value=response[key];
         if (value==NSNull.null) [updated removeObjectForKey:key];
         else if (value) updated[key]=value;
@@ -395,8 +487,9 @@
                 [self showError:error];
             }
         } else {
-            if (!ok) [self showControllerError:error action:action];
+            if (!ok && ![action isEqualToString:@"system-state"]) [self showControllerError:error action:action];
             if (self.terminationPending) [self beginTerminationIfIdle];
+            else [self flushSystemState];
         }
     }];
 }
@@ -428,7 +521,9 @@
 
 - (void)applicationWillTerminate:(NSNotification *)notification {
     (void)notification;
-    [self.pollTimer invalidate];
+    [self.pollTimer invalidate];[self.systemStateTimer invalidate];
+    [NSWorkspace.sharedWorkspace.notificationCenter removeObserver:self];
+    [NSDistributedNotificationCenter.defaultCenter removeObserver:self];
 }
 
 - (BOOL)applicationSupportsSecureRestorableState:(NSApplication *)application {

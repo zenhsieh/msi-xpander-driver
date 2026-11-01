@@ -1,0 +1,33 @@
+...........................
+----------------------------------------------------------------------
+Ran 27 tests in 0.051s
+
+OK
+{"mode": "kiosk"}
+{"ok": true, "mode": "screensaver"}
+{"ok": true, "mode": "stopped"}
+{"ok": true, "mode": "stopped"}
+{"ok": true, "mode": "stopped"}
+{"ok": true, "mode": "stopped"}
+{"ok": true, "mode": "stopped"}
+{"ok": true, "mode": "kiosk"}
+{"ok": true, "mode": "stopped"}
+{"ok": true, "mode": "stopped"}
+{"ok": true, "mode": "stopped"}
+{"ok": true, "mode": "stopped"}
+{"ok": true, "mode": "stopped"}
+{"mode": "kiosk"}
+{"ok": true, "mode": "stopped"}
+{"ok": true, "mode": "stopped"}
+{"ok": true, "mode": "native-kiosk"}
+{"ok": true, "mode": "desktop"}
+{"ok": true, "mode": "stopped"}
+{"ok": true, "mode": "stopped"}
+{"ok": true, "mode": "stopped"}
+{"ok": true, "mode": "screensaver"}
+{"ok": true, "mode": "stopped"}
+{"ok": true, "mode": "stopped"}
+{"ok": true, "mode": "kiosk"}
+{"ok": true, "mode": "stopped"}
+{"ok": true, "mode": "screensaver"}
+{"ok": true, "mode": "kiosk"}

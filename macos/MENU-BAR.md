@@ -8,26 +8,45 @@ Homebrew Python runtime; the minimum OS in the app metadata reflects that limit.
 
 ## Use
 
-Drag `MSI Xpander.app` from the disk image to Applications and open it. Use the
-display icon in the menu bar to choose a remote-source Kiosk, Mac native
-instrument panel, native clock screensaver, extended desktop or black-screen Stop.
-The native instrument panel draws a clock, calendar and local system information
-with AppKit. The clock screensaver is a custom ScreenSaverView using Apple's
-ScreenSaver framework; it does not claim to host Apple's Aerial or other built-in
-screen saver assets. Both native modes use a retained hardware JPEG encoder
-and bulk USB, without creating a virtual monitor, screen capture or network use.
-They work even before a remote Kiosk source is configured.
+Drag `MSI Xpander.app` from the disk image to Applications and open it. The
+menu-bar display icon has a **顯示** submenu with exactly five modes:
 
-Stop waits for producers to exit, sends one native-size black frame, and releases
-USB. The panel remains powered. Quit also blanks an active output while retaining
-the mode to restore on reopening. Failure to deliver black is reported explicitly.
-Desktop update frequency offers 30 or 60 updates per second; JPEG quality is
-separate for the desktop and kiosk. The live test window is off by default and
-is available under the test-options submenu.
+- 遠端 Kiosk: the configured PNG source, rendered remotely if configured that way.
+- 延伸桌面: a normal macOS virtual desktop, captured and sent to the panel.
+- 原生 Kiosk: a real macOS desktop for interactive system widgets. Move the
+  pointer to the panel, right-click its desktop, and choose Edit Widgets. Widgets
+  are managed by macOS, not painted or embedded by this app. This mode has a
+  distinct display identity from the ordinary desktop; no fake widget UI is used.
+- 螢幕保護模式: the custom native clock ScreenSaverView.
+- 關閉螢幕: send black after producers stop, then release USB. USB power remains on.
 
-The first desktop session needs Screen Recording permission for **MSI Xpander**,
+Manual choices affect only the Xpander panel. The app follows Mac screensaver
+start/stop and workspace screen/system sleep/wake notifications. Automatic modes
+do not replace the user's selection: display/system sleep takes priority over
+the screensaver, and the previous selected mode is restored after those states
+end. A manually selected Off remains off after wake. Rapid notifications are
+coalesced on the app's existing serial command queue. Wake is sampled again
+once after three seconds so a settling capture/USB stack can be retried.
+Screensaver Settings previews are ignored. Following concerns lifecycle, not
+copying Apple's Aerial/video assets: the panel's saver is the native clock.
+
+The first launch samples physical screen sleep state and submits a fresh system
+state, replacing stale state from an earlier app run. The app does not preallocate
+or retain a hidden virtual output: only desktop and widget modes create one,
+and leaving them releases it. The known MSI physical-display flash issue remains
+[open](https://github.com/zenhsieh/msi-xpander-driver/issues/1); 1280x480 also flashed,
+so no unverified resolution workaround is shipped. The bridge no longer reads
+or writes physical HDR preferences through undocumented SkyLight functions.
+
+Quit blanks active output while retaining the selected mode for reopening.
+Failure to deliver black is reported. Desktop update frequency offers 30 or
+60 updates per second; JPEG quality is separate for the desktop and kiosk/widget
+modes. The live test window remains off by default and is never enabled in the
+widget mode. The **設定原生 Kiosk 小工具…** menu explains macOS widget setup.
+
+Desktop and widget sessions need Screen Recording permission for **MSI Xpander**,
 the responsible menu app. The permission menu opens the system privacy pane;
-only the user changes that permission. Kiosk has no screen-capture requirement.
+only the user changes that permission. Remote Kiosk and the native clock saver have no screen-capture requirement.
 
 Kiosk takes a user-configured command which writes a 1920×720 PNG to stdout.
 Existing kiosk configuration is migrated. New installations start stopped until

@@ -1,0 +1,18 @@
+{
+  "scope": "Read-only observation of menu state after panel simulation completed. No Apple events or artificial controller system states posted during this interval. Human visual confirmation still separate.",
+  "records": [
+    {
+      "observed_at": "2026-11-01T15:24:19.176285+08:00",
+      "state": {
+        "mode": "stopped",
+        "resume_mode": "kiosk",
+        "system_state": {
+          "system_sleep": false,
+          "screensaver": false,
+          "screen_sleep": true
+        },
+        "last_error": ""
+      }
+    }
+  ]
+}

@@ -13,9 +13,9 @@
     <key>CFBundlePackageType</key>
     <string>APPL</string>
     <key>CFBundleShortVersionString</key>
-    <string>1.0.2</string>
+    <string>1.0.3</string>
     <key>CFBundleVersion</key>
-    <string>4</string>
+    <string>6</string>
     <key>LSUIElement</key>
     <true/>
     <key>LSMinimumSystemVersion</key>
@@ -27,6 +27,6 @@
     <key>NSHighResolutionCapable</key>
     <true/>
     <key>NSScreenCaptureUsageDescription</key>
-    <string>使用延伸桌面時擷取 MSI Xpander 虛擬顯示器，並將畫面傳送到面板。Kiosk 不需要螢幕錄製權限。</string>
+    <string>使用延伸桌面或原生 Kiosk 小工具桌面時擷取 MSI Xpander 虛擬顯示器，並將畫面傳送到面板。遠端 Kiosk 與原生時鐘螢幕保護不需要螢幕錄製權限。</string>
 </dict>
 </plist>

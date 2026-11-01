@@ -1,0 +1,49 @@
+{
+  "recorded_at": "2026-11-01T15:26:23.032121+08:00",
+  "version": "1.0.3",
+  "build": "6",
+  "signature_deep_strict_exit": 0,
+  "installed_status": {
+    "ok": true,
+    "mode": "stopped",
+    "selected_mode": "kiosk",
+    "following_mac": true,
+    "system_state": {
+      "screensaver": false,
+      "screen_sleep": true,
+      "system_sleep": false
+    },
+    "desktop_fps": 60,
+    "desktop_quality": 1.0,
+    "kiosk_quality": 1.0,
+    "test_window": false,
+    "last_error": "",
+    "launch_at_login": true,
+    "logs_path": "/Users/chenyuhsieh/Library/Logs/digiter-xpander-kiosk",
+    "configured": true
+  },
+  "controller_tests": 27,
+  "menu_modes": [
+    "遠端 Kiosk",
+    "延伸桌面",
+    "原生 Kiosk",
+    "螢幕保護模式",
+    "關閉螢幕"
+  ],
+  "mode_parent": "顯示",
+  "widgets_mode": "Actual macOS virtual desktop with widgets configured in Edit Widgets; not hand-drawn AppKit widgets.",
+  "manual_scope": "Panel only. No system-wide fake notifications are posted.",
+  "actual_os_validation": "A real screen-sleep event was observed outside the simulation. Human confirmation of physical appearance, wake restore and actual screen-saver notification delivery remains pending.",
+  "packages": {
+    "MSI-Xpander-1.0.3-arm64.zip": {
+      "bytes": 14731827,
+      "sha256": "2d6217809189b3bb6b479829ef05df27e4de577d4e45c4a884aea9156850b456"
+    },
+    "MSI-Xpander-1.0.3-arm64.dmg": {
+      "bytes": 15714233,
+      "sha256": "66d3fd703198dbcbff822098710e91d3967d8f5e98944761b777ec83e1c2ef6b"
+    }
+  },
+  "known_issue": "https://github.com/zenhsieh/msi-xpander-driver/issues/1",
+  "distribution": "Local certificate signed; not Developer ID notarized."
+}

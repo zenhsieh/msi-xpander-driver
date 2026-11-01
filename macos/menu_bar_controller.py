@@ -20,6 +20,8 @@ PREFS = SUPPORT / "menu-preferences.json"
 STATE = SUPPORT / "menu-state.json"
 LABEL = "com.digiter.xpander-kiosk"
 MENU_LABEL = "com.digiter.xpander-menu"
+MODES = ("kiosk", "desktop", "native-kiosk", "screensaver", "stopped")
+SYSTEM_DEFAULTS = {"screensaver": False, "screen_sleep": False, "system_sleep": False}
 DEFAULTS = {"desktop_fps": 60, "desktop_quality": 0.75, "kiosk_quality": 1.0, "test_window": False}
 
 
@@ -78,7 +80,11 @@ def status():
     error = state.get("last_error", "")
     if state.get("desktop_pid") and not desktop and not service and not error:
         error = "延伸桌面程序已結束，請查看日誌或重新啟動輸出。"
-    return {"ok": True, "mode": mode, **prefs, "last_error": error,
+    selected = state.get("resume_mode", "kiosk")
+    system = {**SYSTEM_DEFAULTS, **state.get("system_state", {})}
+    return {"ok": True, "mode": mode, "selected_mode": selected,
+            "following_mac": any(system.values()) and selected != "stopped",
+            "system_state": system, **prefs, "last_error": error,
             "launch_at_login": (Path.home() / "Library/LaunchAgents" / f"{MENU_LABEL}.plist").exists(),
             "logs_path": str(LOGS), "configured": bool(config.get("frame_cmd")),
             "source_cmd": config.get("frame_cmd", "")}
@@ -158,22 +164,27 @@ def blank_panel():
         raise RuntimeError("輸出已停止，但未能送出黑畫面，請查看日誌。")
 
 
-def start_desktop(mode="desktop"):
+def start_desktop(mode="desktop", remember=True):
     config = read_json(CONFIG, {})
     driver = paths(config)
-    native = mode in ("native-kiosk", "screensaver")
+    native = mode == "screensaver"
     helper = (Path(config.get("resources_path", str(RESOURCES))) / "bin/NativeKioskRenderer"
               if native else Path(config.get("desktop_helper", "")))
     if not driver.is_file() or not helper.is_file():
         raise RuntimeError("桌面元件不完整，請重新安裝 App。")
-    save_state(resume_mode=mode)
+    if remember:
+        save_state(resume_mode=mode)
     stop_desktop()
     stop_kiosk()
     prefs = {**DEFAULTS, **read_json(PREFS, {})}
     env = {**os.environ, "MSI_DESKTOP_TRANSPORT": "bulk", "MSI_BRIDGE_ENCODER": "vt",
            "MSI_DESKTOP_FPS": str(prefs["desktop_fps"]), "MSI_VT_QUALITY": str(prefs["desktop_quality"]),
-           "MSI_DESKTOP_TEST_WINDOW": "1" if prefs["test_window"] else "0",
+           "MSI_DESKTOP_TEST_WINDOW": "1" if mode == "desktop" and prefs["test_window"] else "0",
            "MSI_DESKTOP_MODE": "native", "MSI_VIRTUAL_COLOR_MODE": "system-default"}
+    if mode == "native-kiosk":
+        env.update(MSI_DESKTOP_PURPOSE="widgets", MSI_VT_QUALITY=str(prefs["kiosk_quality"]))
+    else:
+        env["MSI_DESKTOP_PURPOSE"] = "desktop"
     if native:
         env.update(MSI_NATIVE_KIOSK_STYLE=mode, MSI_VT_QUALITY=str(prefs["kiosk_quality"]),
                    MSI_DESKTOP_FPS="30" if mode == "screensaver" else "1")
@@ -216,6 +227,64 @@ def start_desktop(mode="desktop"):
     save_state(mode=mode, producer_mode=mode, desktop_pid=process.pid, desktop_identity=identity, last_error="")
 
 
+def target_mode(selected, system):
+    if selected not in MODES:
+        raise RuntimeError("不支援的顯示模式。")
+    if selected == "stopped" or system.get("screen_sleep") or system.get("system_sleep"):
+        return "stopped"
+    return "screensaver" if system.get("screensaver") else selected
+
+
+def activate_output(target, force=False):
+    """Change the actual producer while retaining the user's selected mode."""
+    current = status()["mode"]
+    if current == target and not force:
+        save_state(last_error="")
+        return
+    remembered = read_json(STATE, {}).get("resume_mode", current)
+    try:
+        if target == "kiosk":
+            start_kiosk(remember=False)
+        elif target == "desktop":
+            start_desktop(remember=False)
+        elif target in ("native-kiosk", "screensaver"):
+            start_desktop(target, remember=False)
+        elif target == "stopped":
+            stop_desktop(); stop_kiosk(); save_state(mode="stopped", last_error="")
+            blank_panel()
+        else:
+            raise RuntimeError("不支援的顯示模式。")
+    finally:
+        # start_desktop also serves direct developer entrypoints that remember
+        # their mode; automatic transitions must never replace the selection.
+        save_state(resume_mode=remembered)
+
+
+def reconcile_output(force=False):
+    state = read_json(STATE, {})
+    selected = state.get("resume_mode", "kiosk")
+    system = {**SYSTEM_DEFAULTS, **state.get("system_state", {})}
+    activate_output(target_mode(selected, system), force=force)
+
+
+def set_system_state(payload):
+    try:
+        system = json.loads(payload)
+    except (ValueError, TypeError):
+        raise RuntimeError("Mac 顯示狀態格式無效。")
+    if (not isinstance(system, dict) or set(system) != set(SYSTEM_DEFAULTS)
+            or any(type(value) is not bool for value in system.values())):
+        raise RuntimeError("Mac 顯示狀態格式無效。")
+    state = read_json(STATE, {})
+    previous = {**SYSTEM_DEFAULTS, **state.get("system_state", {})}
+    entering_sleep = ((system["screen_sleep"] or system["system_sleep"])
+                      and not (previous["screen_sleep"] or previous["system_sleep"]))
+    save_state(system_state=system)
+    # A crashed producer can leave its last image while status says stopped.
+    # A real sleep transition must still clear that image exactly once.
+    reconcile_output(force=entering_sleep and state.get("resume_mode", "kiosk") != "stopped")
+
+
 def serve_kiosk():
     config = read_json(CONFIG, {})
     if not config.get("frame_cmd"):
@@ -254,7 +323,7 @@ def set_preference(action, value):
         if prefs["test_window"] != selected:
             prefs["test_window"] = selected
             write_json(PREFS, prefs)
-            if current == "desktop": start_desktop()
+            if current == "desktop": activate_output(current, force=True)
         return
     choices = {"set-desktop-fps": ("desktop_fps", (30, 60), int),
                "set-desktop-quality": ("desktop_quality", (0.75, 0.9, 1.0), float),
@@ -272,13 +341,12 @@ def set_preference(action, value):
         return
     prefs[key] = selected
     write_json(PREFS, prefs)
-    if current == "desktop" and key.startswith("desktop_"):
-        start_desktop()
-    elif current in ("native-kiosk", "screensaver") and key.startswith("kiosk_"):
-        start_desktop(current)
-    elif current == "kiosk" and key.startswith("kiosk_"):
-        stop_kiosk()
-        start_kiosk()
+    if ((current == "desktop" and key.startswith("desktop_"))
+            or (current == "native-kiosk" and key == "desktop_fps")):
+        activate_output(current, force=True)
+    elif current in ("native-kiosk", "screensaver", "kiosk") and key.startswith("kiosk_"):
+        if current == "kiosk": stop_kiosk()
+        activate_output(current, force=True)
 
 
 def set_login(value):
@@ -317,7 +385,7 @@ def control_lock():
 def main(argv=None):
     argv = sys.argv[1:] if argv is None else argv
     action = argv[0] if argv else "status"
-    if getattr(sys, "frozen", False) and action == "resume":
+    if getattr(sys, "frozen", False) and action in ("resume", "system-state"):
         config = read_json(CONFIG, {})
         if config.get("resources_path") != str(RESOURCES):
             app = RESOURCES.parent.parent
@@ -334,13 +402,12 @@ def main(argv=None):
         print(json.dumps(status(), ensure_ascii=False))
         return
     with control_lock():
-        if action == "kiosk":
-            start_kiosk()
-        elif action in ("desktop", "native-kiosk", "screensaver"):
-            start_desktop() if action == "desktop" else start_desktop(action)
-        elif action == "stop":
-            stop_desktop(); stop_kiosk(); save_state(mode="stopped", resume_mode="stopped", last_error="")
-            blank_panel()
+        if action in ("kiosk", "desktop", "native-kiosk", "screensaver", "stop"):
+            selected = "stopped" if action == "stop" else action
+            save_state(resume_mode=selected)
+            reconcile_output(force=action == "stop")
+        elif action == "system-state":
+            set_system_state(argv[1] if len(argv) > 1 else None)
         elif action == "shutdown":
             current = status()["mode"]
             remembered = read_json(STATE, {}).get("resume_mode", current)
@@ -349,24 +416,9 @@ def main(argv=None):
             if current != "stopped":
                 blank_panel()
         elif action == "resume":
-            remembered = read_json(STATE, {}).get("resume_mode", "kiosk")
-            current = status()["mode"]
-            if current != remembered:
-                if remembered == "desktop": start_desktop()
-                elif remembered in ("native-kiosk", "screensaver"): start_desktop(remembered)
-                elif remembered == "kiosk": start_kiosk()
-                elif remembered == "stopped":
-                    stop_desktop(); stop_kiosk(); save_state(mode="stopped", last_error="")
-            else:
-                save_state(last_error="")
+            reconcile_output()
         elif action == "restart":
-            current = status()["mode"]
-            if current == "desktop":
-                start_desktop()
-            elif current in ("native-kiosk", "screensaver"):
-                start_desktop(current)
-            elif current == "kiosk":
-                stop_kiosk(); start_kiosk()
+            reconcile_output(force=True)
         elif action == "set-frame-cmd":
             import shlex
             value = argv[1] if len(argv) > 1 else ""
@@ -378,7 +430,8 @@ def main(argv=None):
                 raise RuntimeError("來源指令的引號不完整。")
             config = read_json(CONFIG, {}); config["frame_cmd"] = value
             write_json(CONFIG, config); CONFIG.chmod(0o600)
-            if status()["mode"] == "kiosk": stop_kiosk(); start_kiosk()
+            if status()["mode"] == "kiosk":
+                stop_kiosk(); activate_output("kiosk", force=True)
         elif action.startswith("set-") and action != "set-login":
             if action not in ("set-desktop-fps", "set-desktop-quality", "set-kiosk-quality", "set-test-window"):
                 raise RuntimeError("不支援的設定。")
