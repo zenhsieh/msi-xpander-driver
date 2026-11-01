@@ -1,0 +1,5 @@
+Different binaries/CDHashes share the same certificate-bound designated requirement.
+CDHash=1c125763d31fef7c0c5a6554920a43e1917ee120
+CDHash=e3670fd743cb0d49f6d47587991a02b267d92d16
+designated => identifier "com.digiter.xpander.signingtest" and certificate leaf = H"93af44ca508b4f26fb4cc96a99ed78e34204c1c4"
+No privacy database or system-wide certificate trust settings changed.

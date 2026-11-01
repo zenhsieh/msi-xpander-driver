@@ -1,0 +1,22 @@
+test_concurrent_control_action_is_rejected (macos.test_menu_bar_controller.ControllerTests) ... ok
+test_desktop_failure_returns_to_kiosk (macos.test_menu_bar_controller.ControllerTests) ... ok
+test_desktop_stops_kiosk_before_spawning_and_uses_hardware_bulk (macos.test_menu_bar_controller.ControllerTests) ... ok
+test_explicit_stop_is_remembered_on_reopen (macos.test_menu_bar_controller.ControllerTests) ... ok
+test_invalid_preferences_have_no_side_effect (macos.test_menu_bar_controller.ControllerTests) ... ok
+test_registered_but_crashing_kiosk_is_not_reported_running (macos.test_menu_bar_controller.ControllerTests) ... ok
+test_resume_stopped_reconciles_an_autoloaded_kiosk (macos.test_menu_bar_controller.ControllerTests) ... ok
+test_reused_pid_is_not_signalled (macos.test_menu_bar_controller.ControllerTests) ... ok
+test_serve_kiosk_keeps_mutable_frames_outside_signed_bundle (macos.test_menu_bar_controller.ControllerTests) ... ok
+test_shutdown_then_reopen_restores_previous_desktop_mode (macos.test_menu_bar_controller.ControllerTests) ... ok
+test_stop_failure_never_starts_second_usb_owner (macos.test_menu_bar_controller.ControllerTests) ... ok
+test_test_window_is_optional_and_restarts_only_active_desktop (macos.test_menu_bar_controller.ControllerTests) ... ok
+
+----------------------------------------------------------------------
+Ran 12 tests in 0.016s
+
+OK
+{"ok": true, "mode": "stopped"}
+{"ok": true, "mode": "stopped"}
+{"mode": "kiosk"}
+{"ok": true, "mode": "desktop"}
+{"ok": true, "mode": "stopped"}

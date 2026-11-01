@@ -1,0 +1,19 @@
+{
+  "scope": "Recent filtered runtime tail; dynamic dashboard, not a controlled benchmark",
+  "samples": 30,
+  "jpeg_bytes": {
+    "min": 591720.0,
+    "median": 595450.0,
+    "max": 597774.0
+  },
+  "usb_ms": {
+    "min": 13.7,
+    "median": 13.95,
+    "max": 66.7
+  },
+  "encode_pipeline_ms": {
+    "min": 348.2,
+    "median": 450.04999999999995,
+    "max": 1083.0
+  }
+}

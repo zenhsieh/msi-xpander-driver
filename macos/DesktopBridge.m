@@ -4,7 +4,9 @@
 #include <signal.h>
 #include <unistd.h>
 #include <dlfcn.h>
+#include <time.h>
 #import <CoreVideo/CoreVideo.h>
+#import <VideoToolbox/VideoToolbox.h>
 
 // Runtime-only CoreGraphics virtual-display API (also used in Chromium's
 // ui/display/mac/test/virtual_display_util_mac.mm). Not a public Apple API.
@@ -34,7 +36,16 @@ static NSArray<NSDictionary *> *physicalHDRBaseline;
 static Boolean (*readHDR)(CGDirectDisplayID);
 static int (*setHDR)(CGDirectDisplayID,bool);
 static id performanceActivity;
+static BOOL useVTJPEG;
+static double vtQuality = 0.75;
+// Encoder state is owned by the serial SCK capture queue, never the main queue.
+static VTCompressionSessionRef vtSession;
+static NSString *vtEncoderID;
+static NSUInteger vtGeneration;
+static uint64_t vtSequence;
+static BOOL vtVerifiedOutput;
 static void capture(void);
+static void invalidateVTEncoder(void);
 
 static void recordPhysicalHDR(void) {
     void *framework=dlopen("/System/Library/PrivateFrameworks/SkyLight.framework/SkyLight",RTLD_LAZY);
@@ -96,6 +107,7 @@ static void fail(NSString *message) {
 static void resetCapture(NSString *reason) {
     fprintf(stderr,"Capture reset (virtual display retained): %s\n",reason.UTF8String);
     captureEpoch++;
+    if (useVTJPEG && captureQueue) dispatch_async(captureQueue, ^{ invalidateVTEncoder(); });
     SCStream *previous=liveStream;
     liveStream=nil;
     busy=NO;
@@ -120,6 +132,157 @@ static void writeRawFrame(NSData *data,size_t width,size_t height,const char *ma
     if (fwrite(header,1,sizeof(header),stdout)!=sizeof(header) || fwrite(&stamp,1,8,stdout)!=8 || fwrite(&epoch,1,8,stdout)!=8 || fwrite(data.bytes,1,data.length,stdout)!=data.length || fflush(stdout)) exit(0);
     frames++;
     if (frames==1 || frames%120==0) fprintf(stderr,"Captured virtual desktop: %llu frames (%s)\n",frames,magic);
+}
+
+@interface VTDesktopFrame : NSObject
+@property(nonatomic) size_t width, height;
+@property(nonatomic) uint64_t capturedAt, generation, startedAt, encodeMicroseconds;
+@property(nonatomic) OSStatus status;
+@property(nonatomic) BOOL dropped;
+@property(nonatomic, strong) NSData *jpeg;
+@end
+@implementation VTDesktopFrame
+@end
+
+static uint64_t monotonicMicroseconds(void) {
+    struct timespec stamp;
+    if (clock_gettime(CLOCK_MONOTONIC,&stamp)) fail(@"Cannot read encoder clock");
+    return (uint64_t)stamp.tv_sec*1000000 + (uint64_t)stamp.tv_nsec/1000;
+}
+
+static void invalidateVTEncoder(void) {
+    if (vtSession) {
+        VTCompressionSessionInvalidate(vtSession);
+        CFRelease(vtSession);
+        vtSession=NULL;
+    }
+    vtEncoderID=nil;
+    vtVerifiedOutput=NO;
+    vtSequence=0;
+}
+
+static NSString *hardwareJPEGEncoder(void) {
+    CFArrayRef list=NULL;
+    OSStatus status=VTCopyVideoEncoderList(NULL,&list);
+    if (status!=noErr || !list) fail([NSString stringWithFormat:@"Cannot list VT encoders: %d",status]);
+    NSMutableArray<NSString *> *candidates=[NSMutableArray array];
+    for (NSDictionary *entry in (__bridge NSArray *)list) {
+        NSNumber *codec=entry[(__bridge id)kVTVideoEncoderList_CodecType];
+        id hardware=entry[(__bridge id)kVTVideoEncoderList_IsHardwareAccelerated];
+        NSString *identifier=entry[(__bridge id)kVTVideoEncoderList_EncoderID];
+        if (codec.unsignedIntValue==kCMVideoCodecType_JPEG && [identifier isKindOfClass:NSString.class] &&
+            hardware && CFEqual((__bridge CFTypeRef)hardware,kCFBooleanTrue)) [candidates addObject:identifier];
+    }
+    CFRelease(list);
+    [candidates sortUsingSelector:@selector(compare:)];
+    if (!candidates.count) fail(@"No hardware JPEG encoder is listed by VideoToolbox; use MSI_BRIDGE_ENCODER=raw");
+    return candidates.firstObject;
+}
+
+static void verifyVTEncoder(NSString *stage) {
+    CFTypeRef identifier=NULL;
+    OSStatus status=VTSessionCopyProperty(vtSession,kVTCompressionPropertyKey_EncoderID,kCFAllocatorDefault,&identifier);
+    NSString *actual=status==noErr && identifier && CFGetTypeID(identifier)==CFStringGetTypeID()
+        ? [(__bridge NSString *)identifier copy] : nil;
+    if (identifier) CFRelease(identifier);
+    CFArrayRef list=NULL;
+    OSStatus listStatus=VTCopyVideoEncoderList(NULL,&list);
+    BOOL hardware=NO;
+    if (listStatus==noErr && list && [actual isEqualToString:vtEncoderID]) {
+        for (NSDictionary *entry in (__bridge NSArray *)list) {
+            id flag=entry[(__bridge id)kVTVideoEncoderList_IsHardwareAccelerated];
+            if ([entry[(__bridge id)kVTVideoEncoderList_EncoderID] isEqual:actual] &&
+                [entry[(__bridge id)kVTVideoEncoderList_CodecType] unsignedIntValue]==kCMVideoCodecType_JPEG &&
+                flag && CFEqual((__bridge CFTypeRef)flag,kCFBooleanTrue)) hardware=YES;
+        }
+    }
+    if (list) CFRelease(list);
+    if (!hardware) fail([NSString stringWithFormat:@"VT JPEG hardware verification failed [%@]: actual=%@ expected=%@ property=%d registry=%d",
+                         stage,actual ?: @"unavailable",vtEncoderID,status,listStatus]);
+    fprintf(stderr,"VT JPEG hardware confirmed [%s]: EncoderID=%s registry_hardware=true quality=%.2f\n",
+            stage.UTF8String,actual.UTF8String,vtQuality);
+}
+
+static void ensureVTEncoder(NSUInteger generation) {
+    if (vtSession && vtGeneration==generation) return;
+    invalidateVTEncoder();
+    vtEncoderID=hardwareJPEGEncoder();
+    NSDictionary *spec=@{(__bridge id)kVTVideoEncoderSpecification_RequireHardwareAcceleratedVideoEncoder:@YES,
+                          (__bridge id)kVTVideoEncoderSpecification_EncoderID:vtEncoderID};
+    NSDictionary *source=@{(__bridge id)kCVPixelBufferPixelFormatTypeKey:@(kCVPixelFormatType_32BGRA)};
+    OSStatus status=VTCompressionSessionCreate(kCFAllocatorDefault,1920,720,kCMVideoCodecType_JPEG,
+        (__bridge CFDictionaryRef)spec,(__bridge CFDictionaryRef)source,NULL,NULL,NULL,&vtSession);
+    if (status!=noErr || !vtSession) fail([NSString stringWithFormat:@"Cannot create required-hardware VT JPEG session: %d",status]);
+    status=VTSessionSetProperty(vtSession,kVTCompressionPropertyKey_Quality,(__bridge CFNumberRef)@(vtQuality));
+    if (status!=noErr) fail([NSString stringWithFormat:@"VT JPEG quality configuration failed: %d",status]);
+    status=VTCompressionSessionPrepareToEncodeFrames(vtSession);
+    if (status!=noErr) fail([NSString stringWithFormat:@"VT JPEG prepare failed: %d",status]);
+    vtGeneration=generation;
+    verifyVTEncoder(@"before encode");
+}
+
+static void writeJPEGFrame(VTDesktopFrame *frame) {
+    if (colorCaptureDiagnostic) { frames++; return; }
+    if (!frame.jpeg.length || frame.jpeg.length>16*1024*1024-36) fail(@"Invalid VT JPEG frame size");
+    // Prefix length excludes itself: JPEG(4), dimensions(8), timestamps(16),
+    // bridge encode microseconds(8), followed by the compressed JPEG.
+    uint32_t header[]={CFSwapInt32HostToLittle((uint32_t)(36+frame.jpeg.length)),0,
+        CFSwapInt32HostToLittle((uint32_t)frame.width),CFSwapInt32HostToLittle((uint32_t)frame.height)};
+    memcpy(&header[1],"JPEG",4);
+    uint64_t stamp=CFSwapInt64HostToLittle(frame.capturedAt);
+    uint64_t epoch=CFSwapInt64HostToLittle(frame.generation);
+    uint64_t encode=CFSwapInt64HostToLittle(frame.encodeMicroseconds);
+    if (fwrite(header,1,sizeof(header),stdout)!=sizeof(header) || fwrite(&stamp,1,8,stdout)!=8 ||
+        fwrite(&epoch,1,8,stdout)!=8 || fwrite(&encode,1,8,stdout)!=8 ||
+        fwrite(frame.jpeg.bytes,1,frame.jpeg.length,stdout)!=frame.jpeg.length || fflush(stdout)) exit(0);
+    frames++;
+    if (frames==1 || frames%120==0) fprintf(stderr,"Captured virtual desktop: %llu frames (JPEG); %zu bytes; VT encode %.3fms\n",
+                                           frames,frame.jpeg.length,frame.encodeMicroseconds/1000.0);
+}
+
+static void encodeVTFrame(SCStream *stream,CVPixelBufferRef pixels,uint64_t capturedAt,NSUInteger generation,
+                          size_t w,size_t h,size_t pw,size_t ph) {
+    if (CVPixelBufferGetWidth(pixels)!=1920 || CVPixelBufferGetHeight(pixels)!=720)
+        fail(@"VT JPEG requires 1920x720 stream output; use native output or MSI_BRIDGE_ENCODER=raw");
+    ensureVTEncoder(generation);
+    VTDesktopFrame *frame=[VTDesktopFrame new];
+    frame.width=CVPixelBufferGetWidth(pixels); frame.height=CVPixelBufferGetHeight(pixels);
+    frame.capturedAt=capturedAt; frame.generation=generation;
+    frame.startedAt=monotonicMicroseconds();
+    // SCK's pixel buffer goes straight to VT: no lock, packed-BGRA allocation or
+    // application pixel copy. The output block owns its frame context safely.
+    OSStatus status=VTCompressionSessionEncodeFrameWithOutputHandler(vtSession,pixels,
+        CMTimeMake((int64_t)++vtSequence,60),kCMTimeInvalid,NULL,NULL,
+        ^(OSStatus callbackStatus,VTEncodeInfoFlags flags,CMSampleBufferRef sample) {
+            frame.encodeMicroseconds=monotonicMicroseconds()-frame.startedAt;
+            frame.status=callbackStatus;
+            frame.dropped=(flags & kVTEncodeInfo_FrameDropped)!=0;
+            if (callbackStatus!=noErr || frame.dropped || !sample) return;
+            CMBlockBufferRef block=CMSampleBufferGetDataBuffer(sample);
+            size_t count=block?CMBlockBufferGetDataLength(block):0;
+            if (!count || count>16*1024*1024-36) { frame.status=paramErr; return; }
+            NSMutableData *jpeg=[NSMutableData dataWithLength:count];
+            frame.status=CMBlockBufferCopyDataBytes(block,0,count,jpeg.mutableBytes);
+            if (frame.status==noErr) frame.jpeg=jpeg;
+        });
+    // One frame in flight bounds the encoder queue. CompleteFrames drains all
+    // output blocks before this callback can accept the next SCK sample.
+    if (status==noErr) status=VTCompressionSessionCompleteFrames(vtSession,kCMTimeInvalid);
+    if (status!=noErr || frame.status!=noErr) {
+        recoverStream(stream,[NSString stringWithFormat:@"VT JPEG encode failed: submission=%d callback=%d",status,frame.status]);
+        return;
+    }
+    if (frame.dropped) return;
+    if (!frame.jpeg) { recoverStream(stream,@"VT JPEG encoder returned no image"); return; }
+    if (!vtVerifiedOutput) { verifyVTEncoder(@"after first encode"); vtVerifiedOutput=YES; }
+    __block BOOL current;
+    dispatch_sync(dispatch_get_main_queue(), ^{
+        size_t cw,ch,cpw,cph;
+        current=stream==liveStream && generation==captureEpoch && !systemSleeping && !screensSleeping &&
+            currentGeometry(&cw,&ch,&cpw,&cph) && cw==w && ch==h && cpw==pw && cph==ph &&
+            sourceWidth==w && sourceHeight==h && sourcePixelWidth==pw && sourcePixelHeight==ph;
+    });
+    if (current) writeJPEGFrame(frame);
 }
 
 @implementation DesktopStreamOutput
@@ -149,6 +312,10 @@ static void writeRawFrame(NSData *data,size_t width,size_t height,const char *ma
         size_t width=CVPixelBufferGetWidth(pixels),height=CVPixelBufferGetHeight(pixels);
         if (!width || !height || width>3840 || height>1440) fail(@"Invalid stream frame dimensions");
         if (CVPixelBufferGetPixelFormatType(pixels)!=kCVPixelFormatType_32BGRA) fail(@"Unexpected stream pixel format");
+        if (useVTJPEG) {
+            encodeVTFrame(stream,pixels,timestamp,generation,w,h,pw,ph);
+            return;
+        }
         if (CVPixelBufferLockBaseAddress(pixels,kCVPixelBufferLock_ReadOnly)!=kCVReturnSuccess) fail(@"Cannot lock stream pixels");
         NSMutableData *data=[NSMutableData dataWithLength:width*height*4];
         size_t stride=CVPixelBufferGetBytesPerRow(pixels);
@@ -252,6 +419,24 @@ static void capture(void) {
 
 int main(int argc, const char *argv[]) {
     @autoreleasepool {
+        NSString *encoder=NSProcessInfo.processInfo.environment[@"MSI_BRIDGE_ENCODER"] ?: @"raw";
+        if (![encoder isEqualToString:@"raw"] && ![encoder isEqualToString:@"vt"])
+            fail(@"MSI_BRIDGE_ENCODER must be raw or vt");
+        useVTJPEG=[encoder isEqualToString:@"vt"];
+        if (useVTJPEG) {
+            NSString *backend=NSProcessInfo.processInfo.environment[@"MSI_CAPTURE_BACKEND"] ?: @"stream";
+            if (![backend isEqualToString:@"stream"]) fail(@"MSI_BRIDGE_ENCODER=vt requires MSI_CAPTURE_BACKEND=stream");
+            const char *setting=getenv("MSI_VT_QUALITY");
+            if (setting) {
+                char *end=NULL;
+                vtQuality=strtod(setting,&end);
+                if (end==setting || *end || !isfinite(vtQuality) || vtQuality<0 || vtQuality>1)
+                    fail(@"MSI_VT_QUALITY must be a number from 0 to 1");
+            }
+            if ([NSProcessInfo.processInfo.environment[@"MSI_DESKTOP_MODE"] isEqualToString:@"legacy"])
+                fail(@"VT JPEG requires 1920x720 output; MSI_DESKTOP_MODE=legacy is unsupported");
+        }
+        fprintf(stderr,"Bridge encoder: %s%s\n",encoder.UTF8String,useVTJPEG?" (required hardware JPEG)":" (raw BGRA/RGBA)");
         [NSApplication sharedApplication];
         [NSApp setActivationPolicy:NSApplicationActivationPolicyAccessory];
         NSNotificationCenter *workspace=NSWorkspace.sharedWorkspace.notificationCenter;
@@ -412,6 +597,9 @@ int main(int argc, const char *argv[]) {
                 if ([captureColor isEqualToString:@"srgb"]) configuration.colorSpaceName=kCGColorSpaceSRGB;
                 fprintf(stderr,"Capture color conversion: %s\n",[captureColor isEqualToString:@"srgb"]?"forced sRGB":"source display default");
                 dispatch_async(dispatch_get_main_queue(), ^{
+                    BOOL showTestWindow=[NSProcessInfo.processInfo.environment[@"MSI_DESKTOP_TEST_WINDOW"] isEqualToString:@"1"];
+                    fprintf(stderr,"Desktop test window: %s\n",showTestWindow?"enabled":"disabled");
+                    if (showTestWindow) {
                     for (NSScreen *screen in NSScreen.screens) {
                         if ([screen.deviceDescription[@"NSScreenNumber"] unsignedIntValue] != displayID) continue;
                         testWindow = [[NSWindow alloc] initWithContentRect:NSMakeRect(20,30,650,250)
@@ -440,6 +628,7 @@ int main(int argc, const char *argv[]) {
                         [NSTimer scheduledTimerWithTimeInterval:1 repeats:YES block:^(NSTimer *timer) {
                             label.stringValue = [NSString stringWithFormat:@"MSI Xpander — Live Desktop\n%@\nDrag a window onto this screen", [NSDate date]];
                         }];
+                    }
                     }
                     NSString *fpsText=NSProcessInfo.processInfo.environment[@"MSI_DESKTOP_FPS"];
                     double fps=fpsText?fpsText.doubleValue:60;

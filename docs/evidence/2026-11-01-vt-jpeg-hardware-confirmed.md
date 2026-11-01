@@ -1,5 +1,7 @@
 # Hardware JPEG confirmed — 2026-11-01
 
+> **Desktop integration follow-up:** the optional bridge was subsequently implemented and physically measured at qualities 0.75/0.9. See [the bridge results](2026-11-01-vt-jpeg-bridge.md). Statements below about no bridge integration describe this earlier investigation stage.
+
 ## Finding
 
 This Apple M4 Mac's native VideoToolbox JPEG encoder is hardware accelerated. The original JPEG compression session selected `com.apple.videotoolbox.videoencoder.jpeg.ajpeg`, and Apple's public encoder registry identifies that exact ID as **JPEG (HW)** with **IsHardwareAccelerated = true**. The live session EncoderID was checked before and after each 100-frame encode run.

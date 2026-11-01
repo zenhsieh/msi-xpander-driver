@@ -1,0 +1,41 @@
+{
+  "vt_quality": 0.9,
+  "fps_ceiling": 60,
+  "last_logged_frames": 1020,
+  "cumulative_fps_includes_startup_and_idle": 17.7,
+  "recent_fps": {
+    "min": 2.15,
+    "median": 53.66,
+    "mean": 41.58686274509804,
+    "max": 57.03
+  },
+  "jpeg_bytes": {
+    "min": 370186.0,
+    "median": 408208.0,
+    "mean": 409232.48076923075,
+    "max": 434258.0
+  },
+  "age_ms": {
+    "min": 11.634,
+    "median": 18.811,
+    "mean": 19.732134615384616,
+    "max": 28.395
+  },
+  "encode_ms": {
+    "min": 2.0,
+    "median": 3.1,
+    "mean": 3.1431372549019607,
+    "max": 5.2
+  },
+  "usb_ms": {
+    "min": 8.8,
+    "median": 9.6,
+    "mean": 9.696078431372548,
+    "max": 10.6
+  },
+  "dropped_cumulative": 44,
+  "dropped_at_first_frame": 11,
+  "first_frame_s": 3.365,
+  "usb_errors": 0,
+  "host_priming_performed": false
+}

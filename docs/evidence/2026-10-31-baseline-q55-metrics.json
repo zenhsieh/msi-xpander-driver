@@ -1,0 +1,39 @@
+{
+  "quality": 55,
+  "last_logged_frames": 1940,
+  "last_cumulative_fps_includes_startup": 29.4,
+  "recent_fps": {
+    "min": 10.72,
+    "median": 34.16,
+    "mean": 38.06010309278351,
+    "max": 61.45
+  },
+  "jpeg_bytes": {
+    "min": 41805.0,
+    "median": 109340.5,
+    "mean": 106494.25510204081,
+    "max": 124503.0
+  },
+  "capture_to_send_age_ms": {
+    "min": 17.16,
+    "median": 38.472,
+    "mean": 38.573214285714286,
+    "max": 126.186
+  },
+  "jpeg_worker_ms": {
+    "min": 4.2,
+    "median": 5.3,
+    "mean": 5.410309278350516,
+    "max": 8.1
+  },
+  "usb_ms": {
+    "min": 13.5,
+    "median": 28.0,
+    "mean": 24.72680412371134,
+    "max": 38.4
+  },
+  "last_dropped_cumulative_includes_startup": 1036,
+  "initial_dropped": 212,
+  "active_duration_s": 60.24,
+  "cursor_impression": "User: 我覺得算是微卡頓啦...（slight stutter）"
+}

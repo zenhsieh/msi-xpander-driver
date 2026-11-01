@@ -16,30 +16,57 @@ exact validation status of each path.
 |---|---|
 | HID mode switch + RSA vendor handshake | confirmed on macOS and Windows |
 | Dashboard mode (vendor HID, 1440×540 baseline JPEG 4:2:0) | confirmed, physical output verified |
-| macOS extended desktop (`desktop`, ScreenCaptureKit bridge) | works at 1920×720 through the Dashboard HID channel; cursor motion is less smooth than with the official Windows software |
-| Extended-mode bulk streaming (`show420`, `show-prime420`) | confirmed on the panel 2026-10-31 (`docs/evidence/2026-10-31-mac-bulk-works.md`); desktop over bulk in progress |
-| Kiosk mode (`kiosk frame.png`, any PNG source) | works; see `kiosk/README.md` |
+| macOS extended desktop (`desktop`, ScreenCaptureKit bridge) | Dashboard HID remains the default/fallback; opt-in bulk desktop confirmed on the panel 2026-10-31 at 30/60 fps ceilings, with visibly smoother cursor motion ([evidence](docs/evidence/2026-10-31-desktop-bulk.md)) |
+| Extended-mode bulk streaming (`show420`, `show-prime420`) | confirmed on the panel 2026-10-31 (`docs/evidence/2026-10-31-mac-bulk-works.md`); desktop transport now selectable with `MSI_DESKTOP_TRANSPORT` |
+| Kiosk mode (`kiosk frame.png`, any PNG source) | HID default/fallback; `MSI_KIOSK_TRANSPORT=bulk` shares the extended-mode endpoint with bulk desktop, allowing content-producer switches without a physical replug; see `kiosk/README.md` |
 
-## Why the cursor is not as smooth as on Windows
+## macOS menu-bar app and hardware JPEG
 
-The current macOS desktop path captures and encodes each full frame as JPEG,
-then sends it over the Dashboard HID channel. A typical frame is about 100 KB:
-roughly 100 HID reports of 1000 bytes each. Each frame must be sent again when
-the picture changes, so cursor motion can lag or look less fluid. The official
-Windows software also sends full JPEG frames (about 100–200 KB each, no separate
-cursor channel; see `docs/evidence/2026-10-31-windows-mouse-capture.md`), but over
-the extended mode's bulk endpoint at a steady rate. Extended bulk streaming in
-this project is still experimental; finishing it is the whole gap.
+The menu-bar app switches between Kiosk and extended desktop using bulk USB
+and verified VideoToolbox hardware JPEG. The panel tests confirmed clearer kiosk
+output and smoother desktop cursor motion. Kiosk quality defaults to 1.0; the
+live desktop test window is off by default. See [installation and packaging](macos/MENU-BAR.md).
 
-These settings can help tune the current desktop path:
+The command-line default remains HID for compatibility. The older HID path
+sends full frames in small reports and can visibly lag; select bulk for the
+faster path. Capture activity and USB transfer time affect the achieved update
+frequency, so a 60-per-second setting is a ceiling rather than a guarantee.
+See [hardware desktop measurements](docs/evidence/2026-11-01-vt-jpeg-bridge.md)
+and [hardware kiosk validation](docs/evidence/2026-11-01-kiosk-vt-jpeg.md).
 
-| Setting | Expected effect |
-|---|---|
-| `MSI_DESKTOP_MODE=native` | Use a 1920×720 display mode without HiDPI backing; it can reduce capture and encoding work. |
-| `MSI_DESKTOP_JPEG_QUALITY` | Lower quality reduces JPEG size and HID traffic, at the cost of image detail (20–95; default 55). |
-| `MSI_DESKTOP_FPS` | Lower the capture ceiling to reduce work and bandwidth pressure, at the cost of fewer visual updates (1–60; default 60). |
+## Switch between kiosk and desktop without a USB replug
 
-Roadmap: complete the extended bulk protocol and use it for desktop frames.
+Use bulk for both producers and stop the current producer before starting the
+other. For example (the kiosk PNG must already exist):
+
+```sh
+MSI_KIOSK_TRANSPORT=bulk MSI_KIOSK_JPEG_QUALITY=100 cargo run --release --features hardware -- kiosk kiosk/frame.png
+# Stop with Ctrl-C, then start the desktop:
+MSI_DESKTOP_TRANSPORT=bulk MSI_DESKTOP_FPS=60 bash Run-Desktop.command
+# Stop with Ctrl-C, then restart the bulk kiosk command above.
+```
+
+Once the panel is already in extended mode (`0db0:7885`), each producer only opens
+and authenticates that bulk session. It does not request Dashboard mode, replay
+Dashboard priming or reset/re-enumerate the USB device. The panel may retain the
+last picture while no producer runs. Initial startup from Dashboard mode uses
+the captured unprimed forward mode switch, without sending the bundled startup
+JPEG. The explicit `show-prime420` diagnostic retains its priming procedure.
+Do not run both producers concurrently.
+
+Kiosk's transport defaults to HID unless `MSI_KIOSK_TRANSPORT=bulk` is supplied;
+its 250 ms PNG polling and 5-second static-image resend remain unchanged. An
+existing HID-only background kiosk must be stopped before testing bulk desktop.
+This feature switches the image producer while keeping the firmware in the same
+mode; a reverse extended-to-Dashboard firmware command has not been established.
+
+Bulk kiosk sends the PNG at native 1920×720 as baseline JPEG 4:2:0. Set
+`MSI_KIOSK_JPEG_QUALITY` from 1 to 100 to tune its JPEG detail/size; the default is
+85, preserving previous kiosk output. This quality setting belongs to kiosk's
+existing Rust encoder. It is independent of the desktop bridge's VideoToolbox
+encoder/quality controls. To select hardware JPEG for kiosk frames, use
+`MSI_KIOSK_ENCODER=vt` and `MSI_VT_QUALITY=1.0`; the menu-bar app configures this
+automatically. See `kiosk/README.md` for the helper path.
 
 ## Build
 
@@ -59,6 +86,8 @@ Connect the panel, unplug/replug once so it starts in Dashboard mode, then:
 cargo run --release --features hardware -- dashboard      # colour bars / gray ramp / checkerboard
 cargo run --release --features hardware -- show420        # extended-mode stream (experimental)
 cargo run --release --features hardware -- desktop        # macOS: extra display, see macos/
+MSI_DESKTOP_TRANSPORT=bulk MSI_DESKTOP_FPS=30 bash Run-Desktop.command
+MSI_DESKTOP_TRANSPORT=bulk MSI_DESKTOP_FPS=60 bash Run-Desktop.command
 cargo run --release --features hardware -- kiosk frame.png
 ```
 

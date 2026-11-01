@@ -1,0 +1,1 @@
+2026-11-01 00:37:39 +0800 installed persistent Rust sender and native image encoder; launchagent bulk+vt+quality1.0. No USBreset/replug, screen capture, virtual display or bundled Dashboard priming. Prior launchagent configuration preserved locally for rollback.

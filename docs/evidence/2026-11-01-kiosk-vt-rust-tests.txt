@@ -1,0 +1,140 @@
+    Updating crates.io index
+     Locking 8 packages to highest compatible versions
+      Adding errno v0.3.14
+      Adding fastrand v2.5.0
+      Adding getrandom v0.4.3
+      Adding linux-raw-sys v0.12.1
+      Adding once_cell v1.21.4
+      Adding r-efi v6.0.0
+      Adding rustix v1.1.6
+      Adding tempfile v3.27.0
+ Downloading crates ...
+  Downloaded once_cell v1.21.4
+  Downloaded tempfile v3.27.0
+  Downloaded errno v0.3.14
+  Downloaded fastrand v2.5.0
+  Downloaded getrandom v0.4.3
+  Downloaded rustix v1.1.6
+   Compiling libc v0.2.191
+   Compiling cfg-if v1.0.5
+   Compiling shlex v2.0.1
+   Compiling find-msvc-tools v0.1.15
+   Compiling autocfg v1.5.1
+   Compiling libm v0.2.16
+   Compiling pkg-config v0.3.34
+   Compiling const-oid v0.9.6
+   Compiling zerocopy v0.8.63
+   Compiling version_check v0.9.5
+   Compiling simd-adler32 v0.3.10
+   Compiling cc v1.10.0
+   Compiling base64ct v1.8.3
+   Compiling zeroize v1.9.1
+   Compiling adler2 v2.0.1
+   Compiling generic-array v0.14.7
+   Compiling num-traits v0.2.19
+   Compiling crc32fast v1.5.3
+   Compiling typenum v1.20.1
+   Compiling pem-rfc7468 v0.7.0
+   Compiling bitflags v2.13.2
+   Compiling der v0.7.10
+   Compiling miniz_oxide v0.9.1
+   Compiling getrandom v0.4.3
+   Compiling zmij v1.0.23
+   Compiling serde_core v1.0.229
+   Compiling spki v0.7.3
+   Compiling libusb1-sys v0.7.0
+   Compiling num-bigint-dig v0.8.6
+   Compiling spin v0.9.9
+   Compiling rustix v1.1.6
+   Compiling lazy_static v1.5.1
+   Compiling pkcs8 v0.10.2
+   Compiling hidapi v2.6.7
+   Compiling getrandom v0.2.17
+   Compiling rand_core v0.6.4
+   Compiling errno v0.3.14
+   Compiling crypto-common v0.1.7
+   Compiling digest v0.10.7
+   Compiling miniz_oxide v0.8.9
+   Compiling fdeflate v0.3.7
+   Compiling num-integer v0.1.47
+   Compiling ppv-lite86 v0.2.21
+   Compiling num-iter v0.1.46
+   Compiling flate2 v1.1.10
+   Compiling rusb v0.9.4
+   Compiling pxfm v0.1.30
+   Compiling rand_chacha v0.3.1
+   Compiling rand v0.8.8
+   Compiling anyhow v1.0.104
+   Compiling serde_json v1.0.154
+   Compiling smallvec v1.16.4
+   Compiling zune-core v0.5.3
+   Compiling zune-jpeg v0.5.15
+   Compiling png v0.18.1
+   Compiling moxcms v0.8.1
+   Compiling signature v2.2.0
+   Compiling pkcs1 v0.7.5
+   Compiling once_cell v1.21.4
+   Compiling fastrand v2.5.0
+   Compiling subtle v2.6.1
+   Compiling memchr v2.8.3
+   Compiling itoa v1.0.18
+   Compiling byteorder-lite v0.1.0
+   Compiling bytemuck v1.25.2
+   Compiling tempfile v3.27.0
+   Compiling rsa v0.9.10
+   Compiling jpeg-encoder v0.7.1
+   Compiling image v0.25.10
+   Compiling msi-xpander v0.1.0 (/Users/chenyuhsieh/work/msi-xpander-driver/.worktrees/kiosk-vt-jpeg)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 8.48s
+     Running unittests src/lib.rs (target/debug/deps/msi_xpander-26cf1720f020c785)
+
+running 11 tests
+test tests::incomplete_jpeg_is_rejected_before_usb ... ok
+test tests::incomplete_escape_is_rejected ... ok
+test tests::escaped_delimiters_round_trip ... ok
+test display_compatibility_tests::dashboard_profile_is_baseline_420 ... ok
+test tests::invalid_checksum_is_rejected ... ok
+test display_compatibility_tests::malformed_jpeg_is_rejected ... ok
+test display_compatibility_tests::official_extended_frame_is_baseline_420 ... ok
+test display_compatibility_tests::dashboard_reports_match_all_51_captured_reports ... ok
+test tests::short_header_is_rejected ... ok
+test tests::invalid_padding_is_rejected ... ok
+test tests::captured_protocol_and_rsa_proof_match ... ok
+
+test result: ok. 11 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+     Running unittests src/main.rs (target/debug/deps/msi_xpander-2195adaaf7b44cbe)
+
+running 14 tests
+test hardware::desktop_bulk_tests::frame_pacing_spaces_sends_without_bursts_after_a_stall ... ok
+test desktop_frame::tests::malformed_raw_frames_are_rejected ... ok
+test hardware::desktop_bulk_tests::kiosk_encoder_settings_validate_before_opening_usb ... ok
+test hardware::desktop_bulk_tests::failed_bulk_payload_stops_frame_and_new_session_restarts_sequence ... ok
+test hardware::desktop_bulk_tests::bulk_frames_preserve_jpeg_and_increment_wire_sequence ... ok
+test hardware::desktop_bulk_tests::transport_and_frame_rate_settings_reject_unknown_or_unsafe_values ... ok
+test hardware::desktop_bulk_tests::kiosk_transport_defaults_to_hid_and_validates_before_connecting ... ok
+test desktop_frame::tests::raw_channel_order_and_capture_time_are_preserved ... ok
+test desktop_frame::tests::wake_epoch_is_preserved_without_becoming_pixel_data ... ok
+test hardware::desktop_bulk_tests::kiosk_quality_preserves_default_and_accepts_baseline_420_at_maximum ... ok
+test desktop_frame::tests::bgra_pixels_encode_as_blue_and_red_without_channel_reversal ... ok
+test hardware::desktop_bulk_tests::kiosk_rejects_incompatible_helper_output_before_usb ... ok
+test hardware::desktop_bulk_tests::kiosk_helper_spools_large_output_and_propagates_failure ... ok
+test jpeg420::tests::startup_and_full_quality_frames_are_decodable_baseline_420 ... ok
+
+test result: ok. 14 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.73s
+
+     Running tests/handshake.rs (target/debug/deps/handshake-c457b31cc8e6f07d)
+
+running 3 tests
+test short_write_stops_immediately ... ok
+test bad_echo_stops_before_device_proof_and_jpeg ... ok
+test complete_handshake_reproduces_recorded_order ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+   Doc-tests msi_xpander
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

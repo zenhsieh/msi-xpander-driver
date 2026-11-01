@@ -1,0 +1,50 @@
+   Compiling msi-xpander v0.1.0 (/Users/chenyuhsieh/work/msi-xpander-driver/.worktrees/vt-jpeg)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.52s
+     Running unittests src/lib.rs (target/debug/deps/msi_xpander-4a4e55059ba829e2)
+
+running 11 tests
+test display_compatibility_tests::malformed_jpeg_is_rejected ... ok
+test tests::incomplete_jpeg_is_rejected_before_usb ... ok
+test tests::incomplete_escape_is_rejected ... ok
+test tests::invalid_checksum_is_rejected ... ok
+test tests::escaped_delimiters_round_trip ... ok
+test display_compatibility_tests::dashboard_profile_is_baseline_420 ... ok
+test display_compatibility_tests::official_extended_frame_is_baseline_420 ... ok
+test tests::short_header_is_rejected ... ok
+test display_compatibility_tests::dashboard_reports_match_all_51_captured_reports ... ok
+test tests::invalid_padding_is_rejected ... ok
+test tests::captured_protocol_and_rsa_proof_match ... ok
+
+test result: ok. 11 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/main.rs (target/debug/deps/msi_xpander-c39d0d0044bff986)
+
+running 10 tests
+test desktop_frame::tests::raw_frames_keep_the_local_encode_timing_path ... ok
+test desktop_frame::tests::raw_channel_order_and_capture_time_are_preserved ... ok
+test desktop_frame::tests::malformed_raw_frames_are_rejected ... ok
+test jpeg_profile_cli_tests::progressive_frame_header_is_rejected ... ok
+test jpeg_profile_cli_tests::fixture_profile_reports_dimensions_sampling_and_baseline ... ok
+test desktop_frame::tests::wake_epoch_is_preserved_without_becoming_pixel_data ... ok
+test desktop_frame::tests::hardware_jpeg_format_is_checked_on_every_frame ... ok
+test desktop_frame::tests::hardware_jpeg_is_preserved_with_timestamp_epoch_and_encode_duration ... ok
+test desktop_frame::tests::bgra_pixels_encode_as_blue_and_red_without_channel_reversal ... ok
+test jpeg420::tests::startup_and_full_quality_frames_are_decodable_baseline_420 ... ok
+
+test result: ok. 10 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.70s
+
+     Running tests/handshake.rs (target/debug/deps/handshake-0ba14e42bf2c00b5)
+
+running 3 tests
+test bad_echo_stops_before_device_proof_and_jpeg ... ok
+test short_write_stops_immediately ... ok
+test complete_handshake_reproduces_recorded_order ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
+
+   Doc-tests msi_xpander
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

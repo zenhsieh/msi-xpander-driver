@@ -1,0 +1,270 @@
+{
+  "result": "PASS",
+  "hardware_encoder": "com.apple.videotoolbox.videoencoder.jpeg.ajpeg",
+  "orientation_and_color": "Top red, bottom blue, asymmetric green/white markers preserved at all tested qualities; all sampled channel errors <= 5",
+  "color_matrix": "Explicit kCVImageBufferYCbCrMatrix_ITU_R_601_4 attachment prevents BT.709/JPEG decoder matrix tint",
+  "encodes": [
+    {
+      "quality": 1.0,
+      "jpeg_bytes": 33081,
+      "total_process_ms": 112.494,
+      "profile": "width=1920 height=720 sampling=22 11 11 progressive=no baseline=yes",
+      "samples": {
+        "top_red": {
+          "xy": [
+            960,
+            100
+          ],
+          "source": [
+            255,
+            0,
+            0
+          ],
+          "decoded": [
+            254,
+            0,
+            0
+          ]
+        },
+        "bottom_blue": {
+          "xy": [
+            960,
+            620
+          ],
+          "source": [
+            0,
+            0,
+            255
+          ],
+          "decoded": [
+            0,
+            0,
+            254
+          ]
+        },
+        "top_left_green": {
+          "xy": [
+            160,
+            100
+          ],
+          "source": [
+            0,
+            255,
+            0
+          ],
+          "decoded": [
+            0,
+            255,
+            0
+          ]
+        },
+        "bottom_right_white": {
+          "xy": [
+            1700,
+            600
+          ],
+          "source": [
+            255,
+            255,
+            255
+          ],
+          "decoded": [
+            255,
+            255,
+            255
+          ]
+        }
+      }
+    },
+    {
+      "quality": 0.75,
+      "jpeg_bytes": 29440,
+      "total_process_ms": 80.89,
+      "profile": "width=1920 height=720 sampling=22 11 11 progressive=no baseline=yes",
+      "samples": {
+        "top_red": {
+          "xy": [
+            960,
+            100
+          ],
+          "source": [
+            255,
+            0,
+            0
+          ],
+          "decoded": [
+            254,
+            0,
+            0
+          ]
+        },
+        "bottom_blue": {
+          "xy": [
+            960,
+            620
+          ],
+          "source": [
+            0,
+            0,
+            255
+          ],
+          "decoded": [
+            0,
+            0,
+            254
+          ]
+        },
+        "top_left_green": {
+          "xy": [
+            160,
+            100
+          ],
+          "source": [
+            0,
+            255,
+            0
+          ],
+          "decoded": [
+            0,
+            255,
+            0
+          ]
+        },
+        "bottom_right_white": {
+          "xy": [
+            1700,
+            600
+          ],
+          "source": [
+            255,
+            255,
+            255
+          ],
+          "decoded": [
+            255,
+            255,
+            255
+          ]
+        }
+      }
+    },
+    {
+      "quality": 0.9,
+      "jpeg_bytes": 31263,
+      "total_process_ms": 83.505,
+      "profile": "width=1920 height=720 sampling=22 11 11 progressive=no baseline=yes",
+      "samples": {
+        "top_red": {
+          "xy": [
+            960,
+            100
+          ],
+          "source": [
+            255,
+            0,
+            0
+          ],
+          "decoded": [
+            254,
+            0,
+            0
+          ]
+        },
+        "bottom_blue": {
+          "xy": [
+            960,
+            620
+          ],
+          "source": [
+            0,
+            0,
+            255
+          ],
+          "decoded": [
+            0,
+            0,
+            254
+          ]
+        },
+        "top_left_green": {
+          "xy": [
+            160,
+            100
+          ],
+          "source": [
+            0,
+            255,
+            0
+          ],
+          "decoded": [
+            0,
+            255,
+            0
+          ]
+        },
+        "bottom_right_white": {
+          "xy": [
+            1700,
+            600
+          ],
+          "source": [
+            255,
+            255,
+            255
+          ],
+          "decoded": [
+            255,
+            255,
+            255
+          ]
+        }
+      }
+    }
+  ],
+  "default_quality": "0.75 confirmed",
+  "invalid_quality_cases": [
+    {
+      "argument": "nan",
+      "exit": 2,
+      "stdout_bytes": 0,
+      "diagnostic": "VTImageEncoder: Quality must be a number from 0 to 1"
+    },
+    {
+      "argument": "1.1",
+      "exit": 2,
+      "stdout_bytes": 0,
+      "diagnostic": "VTImageEncoder: Quality must be a number from 0 to 1"
+    },
+    {
+      "argument": "-0.01",
+      "exit": 2,
+      "stdout_bytes": 0,
+      "diagnostic": "VTImageEncoder: Quality must be a number from 0 to 1"
+    },
+    {
+      "argument": "not-a-number",
+      "exit": 2,
+      "stdout_bytes": 0,
+      "diagnostic": "VTImageEncoder: Quality must be a number from 0 to 1"
+    },
+    {
+      "argument": "",
+      "exit": 2,
+      "stdout_bytes": 0,
+      "diagnostic": "VTImageEncoder: Quality must be a number from 0 to 1"
+    }
+  ],
+  "wrong_dimensions": {
+    "exit": 2,
+    "stdout_bytes": 0
+  },
+  "missing_input": {
+    "exit": 2,
+    "stdout_bytes": 0
+  },
+  "png_without_filename_extension": {
+    "result": "PASS",
+    "jpeg_bytes": 33081,
+    "exit": 0
+  }
+}

@@ -1,0 +1,11 @@
+# Build-only dependencies for the self-contained macOS controller.
+# Python >= 3.10; the packaging host currently uses CPython 3.14.4 arm64.
+# No dependency is installed globally or required on the recipient's Mac.
+PyInstaller==6.22.3
+Pillow==12.2.0
+# Fully pinned transitive build dependencies from the isolated arm64 environment.
+altgraph==0.17.5
+macholib==1.16.4
+packaging==26.3
+pyinstaller-hooks-contrib==2026.9
+setuptools==84.2.1

@@ -1,0 +1,54 @@
+{
+  "recorded_at": "2026-11-01T14:03:43.245258+08:00",
+  "installed_app": "~/Applications/MSI Xpander.app",
+  "status": {
+    "ok": true,
+    "mode": "kiosk",
+    "desktop_fps": 60,
+    "desktop_quality": 1.0,
+    "kiosk_quality": 1.0,
+    "test_window": false,
+    "last_error": "",
+    "launch_at_login": true,
+    "logs_path": "/Users/chenyuhsieh/Library/Logs/digiter-xpander-kiosk",
+    "configured": true
+  },
+  "service_uses_frozen_controller": true,
+  "signature_deep_strict_exit": 0,
+  "designated_requirement": "Executable=/Users/chenyuhsieh/Applications/MSI Xpander.app/Contents/MacOS/MenuBarApp",
+  "runtime": {
+    "python": "3.14.4",
+    "architecture": "arm64",
+    "verified_macho_count": 73,
+    "recipient_requires_python_install": false,
+    "runtime_status_smoke": {
+      "ok": true,
+      "mode": "kiosk",
+      "desktop_fps": 60,
+      "desktop_quality": 1.0,
+      "kiosk_quality": 1.0,
+      "test_window": false,
+      "configured": true
+    },
+    "source_unchanged_during_freeze": true
+  },
+  "recent_kiosk_sends": [
+    "Kiosk 1920x720: 492508 JPEG bytes; USB 11.6ms; encode pipeline 398.5ms; encoder=Vt",
+    "Kiosk 1920x720: 492237 JPEG bytes; USB 11.7ms; encode pipeline 482.7ms; encoder=Vt",
+    "Kiosk 1920x720: 491974 JPEG bytes; USB 11.6ms; encode pipeline 578.5ms; encoder=Vt",
+    "Kiosk 1920x720: 492443 JPEG bytes; USB 11.7ms; encode pipeline 346.0ms; encoder=Vt",
+    "Kiosk 1920x720: 492703 JPEG bytes; USB 11.6ms; encode pipeline 402.4ms; encoder=Vt"
+  ],
+  "packages": {
+    "MSI-Xpander-1.0.1-arm64.zip": {
+      "bytes": 14710438,
+      "sha256": "cc7f9ffff0c5ed0d6eb82a44501c7c8f4aaf04c13bb4baa6b7cad7bf314765e5"
+    },
+    "MSI-Xpander-1.0.1-arm64.dmg": {
+      "bytes": 15715833,
+      "sha256": "9b68c30a15ce0bea4ad80b4438af1d1496738d7e55ce5263f72c0c2ba7004095"
+    }
+  },
+  "desktop_gui_permission_validation": "Pending user test; never treated CLI or kiosk success as capture permission success.",
+  "distribution": "Local certificate signed. Developer ID notarization not performed."
+}

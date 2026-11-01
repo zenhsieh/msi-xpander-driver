@@ -16,6 +16,38 @@ Resolution changes while running are detected by both logical and backing-pixel 
 
 ## Build and run
 
+### Optional hardware JPEG encoding
+
+`MSI_BRIDGE_ENCODER=vt` selects native VideoToolbox JPEG encoding inside the
+ScreenCaptureKit bridge. The default remains `raw`; select `MSI_BRIDGE_ENCODER=raw`
+to use the existing BGRA-to-Rust software encoder. Encoder selection is separate
+from USB transport selection (`MSI_DESKTOP_TRANSPORT` on the desktop-bulk feature).
+
+The VT path requires continuous capture and native 1920×720 output. It passes the
+captured `CVPixelBuffer` directly to the explicitly selected hardware JPEG encoder.
+The encoder's actual ID must match a registry entry marked hardware accelerated.
+Unsupported hardware, incompatible settings or encoding errors stop the selected
+VT path rather than silently switching to software.
+
+`MSI_VT_QUALITY` sets VT quality from 0 to 1 (default 0.75). The existing
+`MSI_DESKTOP_JPEG_QUALITY` setting only controls raw/software encoding. Frame size
+depends on content; 150–250 KB is a measurement target, not a fixed output size.
+
+Each compressed frame carries capture time, capture generation and bridge encode
+duration through the pipe. Rust checks the JPEG's dimensions, SOF0/8-bit/three
+components and `22 11 11` sampling on every frame, then forwards the JPEG unchanged.
+`Recent throughput` keeps its existing format: its JPEG worker time reports the
+bridge's encode-to-callback duration for VT, and Rust encode time for raw frames.
+Capture-to-send age still includes encoding, pipe transfer and USB sending, but
+does not measure the panel's internal decoding/display delay.
+
+After rebuilding the bridge:
+
+```sh
+MSI_BRIDGE_ENCODER=vt MSI_VT_QUALITY=0.75 bash Run-Desktop.command
+MSI_BRIDGE_ENCODER=vt MSI_VT_QUALITY=0.9 bash Run-Desktop.command
+```
+
 From the project directory:
 
 ```sh
