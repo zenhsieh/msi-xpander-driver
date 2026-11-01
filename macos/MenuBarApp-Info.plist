@@ -26,5 +26,7 @@
     <string>NSApplication</string>
     <key>NSHighResolutionCapable</key>
     <true/>
+    <key>NSScreenCaptureUsageDescription</key>
+    <string>使用延伸桌面時擷取 MSI Xpander 虛擬顯示器，並將畫面傳送到面板。Kiosk 不需要螢幕錄製權限。</string>
 </dict>
 </plist>

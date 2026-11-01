@@ -1,4 +1,5 @@
 #import <AppKit/AppKit.h>
+#import <CoreGraphics/CoreGraphics.h>
 #include <math.h>
 
 @interface XpanderMenuController : NSObject <NSApplicationDelegate, NSMenuDelegate>
@@ -127,6 +128,10 @@
     [menu addItem:[self settingsMenu:@"桌面更新頻率" action:@"set-desktop-fps" values:@[@"30",@"60"] items:self.fpsItems suffix:@" 次"]];
     [menu addItem:[self settingsMenu:@"桌面畫質" action:@"set-desktop-quality" values:@[@"0.75",@"0.9",@"1.0"] items:self.desktopQualityItems suffix:@""]];
     [menu addItem:[self settingsMenu:@"Kiosk 畫質" action:@"set-kiosk-quality" values:@[@"0.75",@"0.9",@"1.0"] items:self.kioskQualityItems suffix:@""]];
+    NSMenuItem *sourceItem=[[NSMenuItem alloc] initWithTitle:@"設定 Kiosk 來源…" action:@selector(configureKioskSource:) keyEquivalent:@""];
+    sourceItem.target=self;
+    [self.controlItems addObject:sourceItem];
+    [menu addItem:sourceItem];
     NSMenuItem *testOptions=[[NSMenuItem alloc] initWithTitle:@"測試選項" action:nil keyEquivalent:@""];
     NSMenu *testMenu=[[NSMenu alloc] initWithTitle:@"測試選項"];
     testMenu.autoenablesItems=NO;
@@ -137,6 +142,10 @@
     [menu addItem:testOptions];
     [menu addItem:[self actionItem:@"重新啟動輸出" action:@"restart" value:nil]];
     [menu addItem:NSMenuItem.separatorItem];
+    NSMenuItem *permissionItem=[[NSMenuItem alloc] initWithTitle:@"螢幕錄製權限…" action:@selector(requestScreenRecordingPermission:) keyEquivalent:@""];
+    permissionItem.target=self;
+    [self.controlItems addObject:permissionItem];
+    [menu addItem:permissionItem];
     self.logsItem=[[NSMenuItem alloc] initWithTitle:@"開啟日誌" action:@selector(openLogs:) keyEquivalent:@""];
     self.logsItem.target=self;
     [menu addItem:self.logsItem];
@@ -209,19 +218,88 @@
     [alert runModal];
 }
 
+- (void)requestScreenRecordingPermission:(id)sender {
+    (void)sender;
+    // This method is only reached through an explicit permission menu action
+    // or the user's permission-help button, never through a Kiosk/status poll.
+    [NSApp activateIgnoringOtherApps:YES];
+    CGRequestScreenCaptureAccess();
+    NSURL *settings=[NSURL URLWithString:@"x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture"];
+    if (![NSWorkspace.sharedWorkspace openURL:settings])
+        [self showError:@"請開啟「系統設定 → 隱私權與安全性 → 螢幕與系統音訊錄製」，為「MSI Xpander」開啟權限。"];
+}
+
+- (void)showControllerError:(NSString *)message action:(NSString *)action {
+    BOOL desktopRequest=[action isEqualToString:@"desktop"] || [action isEqualToString:@"resume"];
+    BOOL permissionError=message.length && [message rangeOfString:@"螢幕錄製"].location!=NSNotFound;
+    if (!desktopRequest || !permissionError) {
+        [self showError:message];
+        return;
+    }
+    NSAlert *alert=[NSAlert new];
+    alert.alertStyle=NSAlertStyleWarning;
+    alert.messageText=@"需要 MSI Xpander 的螢幕錄製權限";
+    alert.informativeText=@"請在「系統設定 → 隱私權與安全性 → 螢幕與系統音訊錄製」開啟「MSI Xpander」。完成後結束並重新開啟 MSI Xpander，再試一次延伸桌面。";
+    [alert addButtonWithTitle:@"開啟設定"];
+    [alert addButtonWithTitle:@"稍後"];
+    [NSApp activateIgnoringOtherApps:YES];
+    if ([alert runModal]==NSAlertFirstButtonReturn) [self requestScreenRecordingPermission:nil];
+}
+
+- (void)configureKioskSource:(id)sender {
+    (void)sender;
+    if (self.busy || self.terminationPending) return;
+    NSAlert *alert=[NSAlert new];
+    alert.messageText=@"設定 Kiosk 來源";
+    alert.informativeText=@"輸入可產生 1920×720 PNG 的指令。儲存後，選擇「Kiosk」才會開始輸出。";
+    [alert addButtonWithTitle:@"儲存"];
+    [alert addButtonWithTitle:@"取消"];
+    NSTextField *input=[[NSTextField alloc] initWithFrame:NSMakeRect(0,0,480,26)];
+    input.stringValue=[self stringForKey:@"source_cmd"];
+    input.placeholderString=@"例如：ssh my-host ~/bin/render-dashboard";
+    input.font=[NSFont monospacedSystemFontOfSize:12 weight:NSFontWeightRegular];
+    input.accessibilityLabel=@"Kiosk 來源指令";
+    alert.accessoryView=input;
+    [NSApp activateIgnoringOtherApps:YES];
+    for (;;) {
+        alert.window.initialFirstResponder=input;
+        [alert.window makeFirstResponder:input];
+        [input selectText:nil];
+        if ([alert runModal]!=NSAlertFirstButtonReturn) return;
+        NSString *command=[input.stringValue stringByTrimmingCharactersInSet:NSCharacterSet.whitespaceAndNewlineCharacterSet];
+        if (!command.length) {
+            [self showError:@"請輸入 Kiosk 畫面來源指令。"];
+            continue;
+        }
+        [self runAction:@"set-frame-cmd" value:command terminating:NO];
+        return;
+    }
+}
+
 - (void)executeControllerAction:(NSString *)action value:(NSString *)value
                     completion:(void (^)(NSDictionary *,NSString *,BOOL))completion {
     dispatch_async(self.commands, ^{
         NSDictionary *response=nil;
         NSString *error=nil;
         BOOL ok=NO;
+        NSURL *standalone=[NSBundle.mainBundle.resourceURL URLByAppendingPathComponent:@"controller/XpanderController"];
         NSURL *script=[NSBundle.mainBundle URLForResource:@"controller" withExtension:@"py"];
-        if (!script) {
+        NSURL *executable=nil;
+        NSArray *arguments=value ? @[action,value] : @[action];
+        if (standalone && [NSFileManager.defaultManager fileExistsAtPath:standalone.path]) {
+            if ([NSFileManager.defaultManager isExecutableFileAtPath:standalone.path]) executable=standalone;
+        } else if (script) {
+            // Development bundles may carry the source controller. Installed
+            // distribution bundles use the frozen executable and need no Python.
+            executable=[NSURL fileURLWithPath:@"/usr/bin/python3"];
+            arguments=[@[script.path] arrayByAddingObjectsFromArray:arguments];
+        }
+        if (!executable) {
             error=@"無法啟動面板控制服務，請重新開啟 MSI Xpander。";
         } else {
             NSTask *task=[NSTask new];
-            task.executableURL=[NSURL fileURLWithPath:@"/usr/bin/python3"];
-            task.arguments=value ? @[script.path,action,value] : @[script.path,action];
+            task.executableURL=executable;
+            task.arguments=arguments;
             NSPipe *output=[NSPipe pipe];
             task.standardOutput=output;
             task.standardError=NSFileHandle.fileHandleWithNullDevice;
@@ -253,7 +331,7 @@
     // Ignore backend fields that have no visual representation (for example a
     // timestamp or process counter) so they cannot cause periodic menu redraws.
     for (NSString *key in @[@"mode",@"desktop_fps",@"desktop_quality",@"kiosk_quality",
-                            @"launch_at_login",@"test_window",@"last_error",@"logs_path"]) {
+                            @"launch_at_login",@"test_window",@"last_error",@"logs_path",@"source_cmd"]) {
         id value=response[key];
         if (value==NSNull.null) [updated removeObjectForKey:key];
         else if (value) updated[key]=value;
@@ -313,7 +391,7 @@
                 [self showError:error];
             }
         } else {
-            if (!ok) [self showError:error];
+            if (!ok) [self showControllerError:error action:action];
             if (self.terminationPending) [self beginTerminationIfIdle];
         }
     }];
