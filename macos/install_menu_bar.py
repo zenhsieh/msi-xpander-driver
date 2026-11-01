@@ -52,6 +52,16 @@ def install(source, frame_cmd=None, launch=True, inplace=False, manage_ui=True, 
                      resources / "bin/VTImageEncoder", resources / "controller.py"):
         if not required.is_file():
             raise RuntimeError(f"App 元件不完整：{required}")
+    # Exercise the embedded runtime before stopping a working installation.
+    frozen_source = resources / "controller/XpanderController"
+    if frozen_source.exists():
+        probe = subprocess.run([str(frozen_source), "status"], capture_output=True, text=True, timeout=20)
+        try:
+            healthy = probe.returncode == 0 and json.loads(probe.stdout).get("ok") is True
+        except (ValueError, AttributeError):
+            healthy = False
+        if not healthy:
+            raise RuntimeError("新版 App 執行環境無法啟動，已保留目前輸出。請重新打包。")
     for directory in (support, logs, agents, app.parent):
         directory.mkdir(parents=True, exist_ok=True)
     backup = support / ("before-menu-app-" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S"))
