@@ -239,7 +239,7 @@
     NSAlert *alert=[NSAlert new];
     alert.alertStyle=NSAlertStyleWarning;
     alert.messageText=@"需要 MSI Xpander 的螢幕錄製權限";
-    alert.informativeText=@"請在「系統設定 → 隱私權與安全性 → 螢幕與系統音訊錄製」開啟「MSI Xpander」。完成後結束並重新開啟 MSI Xpander，再試一次延伸桌面。";
+    alert.informativeText=[NSString stringWithFormat:@"請在「系統設定 → 隱私權與安全性 → 螢幕與系統音訊錄製」允許主程式「MSI Xpander」。若舊項目已開啟卻仍失敗，請移除舊項目，再按「＋」加入目前的 MSI Xpander.app 並開啟權限。完成後結束並重新開啟 MSI Xpander。\n\n目前 App：%@",NSBundle.mainBundle.bundlePath.stringByAbbreviatingWithTildeInPath];
     [alert addButtonWithTitle:@"開啟設定"];
     [alert addButtonWithTitle:@"稍後"];
     [NSApp activateIgnoringOtherApps:YES];
