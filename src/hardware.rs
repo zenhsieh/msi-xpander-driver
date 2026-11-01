@@ -563,6 +563,16 @@ fn jpeg(image: &DynamicImage, quality: u8) -> Result<Vec<u8>> {
     Ok(out)
 }
 
+/// Leave a black framebuffer on the panel, then release the USB interface.
+pub fn blank() -> Result<()> {
+    let image = DynamicImage::ImageRgb8(RgbImage::new(1920, 720));
+    let jpeg = crate::jpeg420::encode(&image, 85)?;
+    let mut display = connect_desktop(DesktopTransportKind::Bulk)?;
+    display.send(&jpeg, 0)?;
+    eprintln!("Panel black frame delivered; USB released on exit (panel remains powered)");
+    Ok(())
+}
+
 pub fn show(path: Option<&Path>) -> Result<()> {
     show_internal(path, false, false, false)
 }

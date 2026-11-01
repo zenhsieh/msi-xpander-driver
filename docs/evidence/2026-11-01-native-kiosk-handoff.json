@@ -1,0 +1,114 @@
+{
+  "recorded_at": "2026-11-01T14:28:17.205111+08:00",
+  "actions": [
+    {
+      "action": "native-kiosk",
+      "exit": 0,
+      "elapsed_seconds": 1.462,
+      "status": {
+        "ok": true,
+        "mode": "native-kiosk",
+        "desktop_fps": 60,
+        "desktop_quality": 1.0,
+        "kiosk_quality": 1.0,
+        "test_window": false,
+        "last_error": "",
+        "launch_at_login": true,
+        "logs_path": "/Users/chenyuhsieh/Library/Logs/digiter-xpander-kiosk",
+        "configured": true
+      }
+    },
+    {
+      "action": "stop",
+      "exit": 0,
+      "elapsed_seconds": 0.29,
+      "status": {
+        "ok": true,
+        "mode": "stopped",
+        "desktop_fps": 60,
+        "desktop_quality": 1.0,
+        "kiosk_quality": 1.0,
+        "test_window": false,
+        "last_error": "",
+        "launch_at_login": true,
+        "logs_path": "/Users/chenyuhsieh/Library/Logs/digiter-xpander-kiosk",
+        "configured": true
+      }
+    },
+    {
+      "action": "screensaver",
+      "exit": 0,
+      "elapsed_seconds": 0.413,
+      "status": {
+        "ok": true,
+        "mode": "screensaver",
+        "desktop_fps": 60,
+        "desktop_quality": 1.0,
+        "kiosk_quality": 1.0,
+        "test_window": false,
+        "last_error": "",
+        "launch_at_login": true,
+        "logs_path": "/Users/chenyuhsieh/Library/Logs/digiter-xpander-kiosk",
+        "configured": true
+      }
+    },
+    {
+      "action": "native-kiosk",
+      "exit": 0,
+      "elapsed_seconds": 1.262,
+      "status": {
+        "ok": true,
+        "mode": "native-kiosk",
+        "desktop_fps": 60,
+        "desktop_quality": 1.0,
+        "kiosk_quality": 1.0,
+        "test_window": false,
+        "last_error": "",
+        "launch_at_login": true,
+        "logs_path": "/Users/chenyuhsieh/Library/Logs/digiter-xpander-kiosk",
+        "configured": true
+      }
+    }
+  ],
+  "log_excerpt": [
+    "NativeKiosk: style=dashboard EncoderID=com.apple.videotoolbox.videoencoder.jpeg.ajpeg registry_hardware=true quality=1.00; no virtual display or screen capture",
+    "Bulk frame pacing: 1.00 fps; regular-quality first frame (no quality-1 startup frame)",
+    "Live JPEG quality: VT 1.0 (bridge JPEG passthrough); native output dimensions retained",
+    "Captured desktop output: 1920x720 pixels; JPEG worker overlaps USB sending",
+    "Live desktop: 1 frames, 1.02 fps, 167744 JPEG bytes, capture-to-send age Some(16.67) ms, 0 old captures dropped",
+    "NativeKiosk: style=screensaver EncoderID=com.apple.videotoolbox.videoencoder.jpeg.ajpeg registry_hardware=true quality=1.00; no virtual display or screen capture",
+    "Bulk frame pacing: 30.00 fps; regular-quality first frame (no quality-1 startup frame)",
+    "Live JPEG quality: VT 1.0 (bridge JPEG passthrough); native output dimensions retained",
+    "Captured desktop output: 1920x720 pixels; JPEG worker overlaps USB sending",
+    "Live desktop: 1 frames, 5.98 fps, 75762 JPEG bytes, capture-to-send age Some(37.882) ms, 3 old captures dropped",
+    "Live desktop: 20 frames, 22.61 fps, 80189 JPEG bytes, capture-to-send age Some(18.678) ms, 5 old captures dropped",
+    "Recent throughput (includes idle gaps): 27.80 fps; mean JPEG worker 3.3ms, USB 2.3ms per frame (overlapping stages)",
+    "Live desktop: 40 frames, 24.80 fps, 79153 JPEG bytes, capture-to-send age Some(40.615) ms, 5 old captures dropped",
+    "Recent throughput (includes idle gaps): 27.45 fps; mean JPEG worker 3.9ms, USB 2.4ms per frame (overlapping stages)",
+    "Live desktop: 60 frames, 25.61 fps, 73497 JPEG bytes, capture-to-send age Some(30.519) ms, 6 old captures dropped",
+    "Recent throughput (includes idle gaps): 27.42 fps; mean JPEG worker 3.9ms, USB 2.3ms per frame (overlapping stages)",
+    "Live desktop: 80 frames, 26.10 fps, 72561 JPEG bytes, capture-to-send age Some(15.475) ms, 7 old captures dropped",
+    "Recent throughput (includes idle gaps): 27.69 fps; mean JPEG worker 3.3ms, USB 2.1ms per frame (overlapping stages)",
+    "Live desktop: 100 frames, 26.20 fps, 67228 JPEG bytes, capture-to-send age Some(36.996) ms, 8 old captures dropped",
+    "Recent throughput (includes idle gaps): 26.60 fps; mean JPEG worker 3.3ms, USB 2.0ms per frame (overlapping stages)",
+    "Live desktop: 120 frames, 26.37 fps, 70732 JPEG bytes, capture-to-send age Some(36.947) ms, 9 old captures dropped",
+    "Recent throughput (includes idle gaps): 27.26 fps; mean JPEG worker 3.6ms, USB 2.2ms per frame (overlapping stages)",
+    "Live desktop: 140 frames, 26.50 fps, 71075 JPEG bytes, capture-to-send age Some(36.198) ms, 10 old captures dropped",
+    "Recent throughput (includes idle gaps): 27.27 fps; mean JPEG worker 3.9ms, USB 2.2ms per frame (overlapping stages)",
+    "Live desktop: 160 frames, 26.61 fps, 71429 JPEG bytes, capture-to-send age Some(23.343) ms, 11 old captures dropped",
+    "Recent throughput (includes idle gaps): 27.47 fps; mean JPEG worker 3.9ms, USB 2.2ms per frame (overlapping stages)",
+    "Live desktop: 180 frames, 26.75 fps, 70869 JPEG bytes, capture-to-send age Some(31.235) ms, 11 old captures dropped",
+    "Recent throughput (includes idle gaps): 27.91 fps; mean JPEG worker 3.8ms, USB 2.1ms per frame (overlapping stages)",
+    "Live desktop: 200 frames, 26.83 fps, 73236 JPEG bytes, capture-to-send age Some(21.017) ms, 12 old captures dropped",
+    "Recent throughput (includes idle gaps): 27.60 fps; mean JPEG worker 4.0ms, USB 2.1ms per frame (overlapping stages)",
+    "Live desktop: 220 frames, 26.88 fps, 72566 JPEG bytes, capture-to-send age Some(17.267) ms, 13 old captures dropped",
+    "Recent throughput (includes idle gaps): 27.32 fps; mean JPEG worker 3.9ms, USB 2.2ms per frame (overlapping stages)",
+    "NativeKiosk: style=dashboard EncoderID=com.apple.videotoolbox.videoencoder.jpeg.ajpeg registry_hardware=true quality=1.00; no virtual display or screen capture",
+    "Bulk frame pacing: 1.00 fps; regular-quality first frame (no quality-1 startup frame)",
+    "Live JPEG quality: VT 1.0 (bridge JPEG passthrough); native output dimensions retained",
+    "Captured desktop output: 1920x720 pixels; JPEG worker overlaps USB sending",
+    "Live desktop: 1 frames, 1.00 fps, 164767 JPEG bytes, capture-to-send age Some(16.337) ms, 0 old captures dropped"
+  ],
+  "visual_confirmation": "Pending user observation. Stop command exit=0 means transfer completed; physical black appearance requires user confirmation.",
+  "source_commands_and_frames": "Not included."
+}

@@ -65,6 +65,43 @@ class ControllerTests(unittest.TestCase):
             c.stop_desktop()
         kill.assert_not_called()
 
+    def test_black_stop_happens_after_both_producers_exit(self):
+        events = []
+        with patch.object(c, "stop_desktop", side_effect=lambda: events.append("desktop-exit")), \
+             patch.object(c, "stop_kiosk", side_effect=lambda: events.append("kiosk-exit")), \
+             patch.object(c, "blank_panel", side_effect=lambda: events.append("black")), \
+             patch.object(c, "status", return_value={"ok": True, "mode": "stopped"}):
+            c.main(["stop"])
+        self.assertEqual(events, ["desktop-exit", "kiosk-exit", "black"])
+        self.assertEqual(c.read_json(c.STATE, {})["resume_mode"], "stopped")
+
+    def test_native_modes_use_native_renderer_without_capture_helper(self):
+        renderer = self.root / "bin/NativeKioskRenderer"; renderer.touch()
+        for mode in ("native-kiosk", "screensaver"):
+            process = Mock(pid=43210); process.poll.return_value = None
+            def spawn(argv, **kwargs):
+                self.assertEqual(argv[-1], str(renderer))
+                self.assertEqual(kwargs["env"]["MSI_NATIVE_KIOSK_STYLE"], mode)
+                self.assertEqual(kwargs["env"]["MSI_VT_QUALITY"], "1.0")
+                kwargs["stdout"].write(b"Live desktop: 1 frames\n"); kwargs["stdout"].flush()
+                return process
+            with patch.object(c, "stop_desktop"), patch.object(c, "stop_kiosk"), \
+                 patch.object(c.subprocess, "Popen", side_effect=spawn), \
+                 patch.object(c, "process_identity", return_value="native producer"):
+                c.start_desktop(mode)
+            state = c.read_json(c.STATE, {})
+            self.assertEqual(state["producer_mode"], mode)
+            self.assertEqual(state["resume_mode"], mode)
+
+    def test_native_mode_is_reported_and_restored(self):
+        c.write_json(c.STATE, {"resume_mode": "screensaver", "producer_mode": "screensaver"})
+        with patch.object(c, "desktop_alive", return_value=True), patch.object(c, "service_info", return_value=None):
+            self.assertEqual(c.status()["mode"], "screensaver")
+        with patch.object(c, "status", return_value={"ok": True, "mode": "stopped"}), \
+             patch.object(c, "start_desktop") as start:
+            c.main(["resume"])
+        start.assert_called_once_with("screensaver")
+
     def test_invalid_preferences_have_no_side_effect(self):
         for action, value in (("set-desktop-fps", "120"), ("set-desktop-quality", "NaN"),
                               ("set-kiosk-quality", "0")):
@@ -91,8 +128,9 @@ class ControllerTests(unittest.TestCase):
     def test_shutdown_then_reopen_restores_previous_desktop_mode(self):
         c.write_json(c.STATE, {"resume_mode": "desktop"})
         with patch.object(c, "status", return_value={"ok": True, "mode": "desktop"}), \
-             patch.object(c, "stop_desktop"), patch.object(c, "stop_kiosk"):
+             patch.object(c, "stop_desktop"), patch.object(c, "stop_kiosk"), patch.object(c, "blank_panel") as blank:
             c.main(["shutdown"])
+        blank.assert_called_once()
         self.assertEqual(c.read_json(c.STATE, {})["resume_mode"], "desktop")
         with patch.object(c, "status", return_value={"ok": True, "mode": "stopped"}), \
              patch.object(c, "start_desktop") as restore:
@@ -103,7 +141,8 @@ class ControllerTests(unittest.TestCase):
         with patch.object(c, "status", return_value={"ok": True, "mode": "stopped"}), \
              patch.object(c, "stop_desktop"), patch.object(c, "stop_kiosk"), \
              patch.object(c, "start_desktop") as desktop, patch.object(c, "start_kiosk") as kiosk:
-            c.main(["stop"]); c.main(["resume"])
+            with patch.object(c, "blank_panel"):
+                c.main(["stop"]); c.main(["resume"])
         desktop.assert_not_called(); kiosk.assert_not_called()
 
     def test_test_window_is_optional_and_restarts_only_active_desktop(self):

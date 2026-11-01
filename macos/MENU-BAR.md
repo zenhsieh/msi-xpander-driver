@@ -9,7 +9,18 @@ Homebrew Python runtime; the minimum OS in the app metadata reflects that limit.
 ## Use
 
 Drag `MSI Xpander.app` from the disk image to Applications and open it. Use the
-display icon in the menu bar to choose Kiosk, extended desktop or stop output.
+display icon in the menu bar to choose a remote-source Kiosk, Mac native
+instrument panel, native clock screensaver, extended desktop or black-screen Stop.
+The native instrument panel draws a clock, calendar and local system information
+with AppKit. The clock screensaver is a custom ScreenSaverView using Apple's
+ScreenSaver framework; it does not claim to host Apple's Aerial or other built-in
+screen saver assets. Both native modes use a retained hardware JPEG encoder
+and bulk USB, without creating a virtual monitor, screen capture or network use.
+They work even before a remote Kiosk source is configured.
+
+Stop waits for producers to exit, sends one native-size black frame, and releases
+USB. The panel remains powered. Quit also blanks an active output while retaining
+the mode to restore on reopening. Failure to deliver black is reported explicitly.
 Desktop update frequency offers 30 or 60 updates per second; JPEG quality is
 separate for the desktop and kiosk. The live test window is off by default and
 is available under the test-options submenu.

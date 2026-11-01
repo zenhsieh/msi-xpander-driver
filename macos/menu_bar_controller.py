@@ -74,7 +74,7 @@ def status():
     service = service_info()
     kiosk = bool(service and service.get("running") and service.get("pid")
                  and process_identity(service["pid"]))
-    mode = "desktop" if desktop else "kiosk" if kiosk else "stopped"
+    mode = state.get("producer_mode", "desktop") if desktop else "kiosk" if kiosk else "stopped"
     error = state.get("last_error", "")
     if state.get("desktop_pid") and not desktop and not service and not error:
         error = "延伸桌面程序已結束，請查看日誌或重新啟動輸出。"
@@ -151,13 +151,22 @@ def start_kiosk(remember=True):
     save_state(mode="kiosk", last_error="", **({"resume_mode": "kiosk"} if remember else {}))
 
 
-def start_desktop():
+def blank_panel():
+    config = read_json(CONFIG, {})
+    result = subprocess.run([str(paths(config)), "blank"], capture_output=True, text=True, timeout=35)
+    if result.returncode:
+        raise RuntimeError("輸出已停止，但未能送出黑畫面，請查看日誌。")
+
+
+def start_desktop(mode="desktop"):
     config = read_json(CONFIG, {})
     driver = paths(config)
-    helper = Path(config.get("desktop_helper", ""))
+    native = mode in ("native-kiosk", "screensaver")
+    helper = (Path(config.get("resources_path", str(RESOURCES))) / "bin/NativeKioskRenderer"
+              if native else Path(config.get("desktop_helper", "")))
     if not driver.is_file() or not helper.is_file():
         raise RuntimeError("桌面元件不完整，請重新安裝 App。")
-    save_state(resume_mode="desktop")
+    save_state(resume_mode=mode)
     stop_desktop()
     stop_kiosk()
     prefs = {**DEFAULTS, **read_json(PREFS, {})}
@@ -165,6 +174,9 @@ def start_desktop():
            "MSI_DESKTOP_FPS": str(prefs["desktop_fps"]), "MSI_VT_QUALITY": str(prefs["desktop_quality"]),
            "MSI_DESKTOP_TEST_WINDOW": "1" if prefs["test_window"] else "0",
            "MSI_DESKTOP_MODE": "native", "MSI_VIRTUAL_COLOR_MODE": "system-default"}
+    if native:
+        env.update(MSI_NATIVE_KIOSK_STYLE=mode, MSI_VT_QUALITY=str(prefs["kiosk_quality"]),
+                   MSI_DESKTOP_FPS="30" if mode == "screensaver" else "1")
     LOGS.mkdir(parents=True, exist_ok=True)
     process = None
     try:
@@ -201,7 +213,7 @@ def start_desktop():
         with contextlib.suppress(Exception):
             start_kiosk(remember=False)
         raise
-    save_state(mode="desktop", desktop_pid=process.pid, desktop_identity=identity, last_error="")
+    save_state(mode=mode, producer_mode=mode, desktop_pid=process.pid, desktop_identity=identity, last_error="")
 
 
 def serve_kiosk():
@@ -262,6 +274,8 @@ def set_preference(action, value):
     write_json(PREFS, prefs)
     if current == "desktop" and key.startswith("desktop_"):
         start_desktop()
+    elif current in ("native-kiosk", "screensaver") and key.startswith("kiosk_"):
+        start_desktop(current)
     elif current == "kiosk" and key.startswith("kiosk_"):
         stop_kiosk()
         start_kiosk()
@@ -322,20 +336,24 @@ def main(argv=None):
     with control_lock():
         if action == "kiosk":
             start_kiosk()
-        elif action == "desktop":
-            start_desktop()
+        elif action in ("desktop", "native-kiosk", "screensaver"):
+            start_desktop() if action == "desktop" else start_desktop(action)
         elif action == "stop":
             stop_desktop(); stop_kiosk(); save_state(mode="stopped", resume_mode="stopped", last_error="")
+            blank_panel()
         elif action == "shutdown":
             current = status()["mode"]
             remembered = read_json(STATE, {}).get("resume_mode", current)
             stop_desktop(); stop_kiosk()
             save_state(mode="stopped", resume_mode=remembered, last_error="")
+            if current != "stopped":
+                blank_panel()
         elif action == "resume":
             remembered = read_json(STATE, {}).get("resume_mode", "kiosk")
             current = status()["mode"]
             if current != remembered:
                 if remembered == "desktop": start_desktop()
+                elif remembered in ("native-kiosk", "screensaver"): start_desktop(remembered)
                 elif remembered == "kiosk": start_kiosk()
                 elif remembered == "stopped":
                     stop_desktop(); stop_kiosk(); save_state(mode="stopped", last_error="")
@@ -345,6 +363,8 @@ def main(argv=None):
             current = status()["mode"]
             if current == "desktop":
                 start_desktop()
+            elif current in ("native-kiosk", "screensaver"):
+                start_desktop(current)
             elif current == "kiosk":
                 stop_kiosk(); start_kiosk()
         elif action == "set-frame-cmd":

@@ -33,6 +33,8 @@ fn main() -> Result<()> {
         #[cfg(feature = "hardware")]
         "probe" => hardware::probe(),
         #[cfg(feature = "hardware")]
+        "blank" => hardware::blank(),
+        #[cfg(feature = "hardware")]
         "show" => hardware::show(args.get(2).map(std::path::Path::new)),
         #[cfg(feature = "hardware")]
         "show-stream" => hardware::show_stream(),
@@ -46,7 +48,7 @@ fn main() -> Result<()> {
         "show420" => hardware::show_420(false),
         #[cfg(feature = "hardware")]
         "show-prime420" => hardware::show_420(true),
-        _ => anyhow::bail!("Commands: verify | jpeg-profile image.jpg | probe | show [image.jpg] | show-stream | dashboard [image.jpg] | show420 | show-prime420 | desktop [frames] | kiosk frame.png. Hardware commands need --features hardware."),
+        _ => anyhow::bail!("Commands: verify | jpeg-profile image.jpg | probe | blank | show [image.jpg] | show-stream | dashboard [image.jpg] | show420 | show-prime420 | desktop [frames] | kiosk frame.png. Hardware commands need --features hardware."),
     }
 }
 

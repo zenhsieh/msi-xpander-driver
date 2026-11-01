@@ -1,0 +1,12 @@
+...............
+----------------------------------------------------------------------
+Ran 15 tests in 0.022s
+
+OK
+{"ok": true, "mode": "stopped"}
+{"ok": true, "mode": "stopped"}
+{"ok": true, "mode": "stopped"}
+{"ok": true, "mode": "stopped"}
+{"mode": "kiosk"}
+{"ok": true, "mode": "desktop"}
+{"ok": true, "mode": "stopped"}

@@ -12,6 +12,10 @@ mkdir -p "$app/Contents/MacOS" "$resources/bin" "$resources/kiosk" "$helper/Cont
 xcrun clang -fobjc-arc -fblocks -O2 -framework AppKit -framework CoreGraphics macos/MenuBarApp.m -o "$app/Contents/MacOS/MenuBarApp"
 cp macos/MenuBarApp-Info.plist "$app/Contents/Info.plist"
 cp target/release/msi-xpander target/VTImageEncoder "$resources/bin/"
+xcrun clang -fobjc-arc -fblocks -O2 -Wall -Wextra -Werror -framework AppKit -framework ScreenSaver \
+  -framework CoreGraphics -framework CoreMedia -framework CoreVideo -framework VideoToolbox \
+  macos/NativeKioskRenderer.m -o "$resources/bin/NativeKioskRenderer"
+codesign --force --sign "$identity" --timestamp=none --identifier com.digiter.xpander.native-kiosk "$resources/bin/NativeKioskRenderer"
 cp macos/menu_bar_controller.py "$resources/controller.py"
 ditto target/frozen/XpanderController "$resources/controller"
 cp kiosk/run_kiosk.py "$resources/kiosk/"

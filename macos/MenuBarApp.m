@@ -43,6 +43,8 @@
     NSString *mode=[self stringForKey:@"mode"];
     if ([mode isEqualToString:@"kiosk"]) return @"Kiosk";
     if ([mode isEqualToString:@"desktop"]) return @"延伸桌面";
+    if ([mode isEqualToString:@"native-kiosk"]) return @"Mac 原生儀表板";
+    if ([mode isEqualToString:@"screensaver"]) return @"螢幕保護（原生時鐘）";
     if ([mode isEqualToString:@"stopped"]) return @"停止輸出";
     return @"讀取狀態中…";
 }
@@ -52,6 +54,8 @@
     if ([self.currentAction isEqualToString:@"resume"]) return @"正在恢復上次模式…";
     if ([self.currentAction isEqualToString:@"kiosk"]) return @"正在啟動 Kiosk…";
     if ([self.currentAction isEqualToString:@"desktop"]) return @"正在啟動延伸桌面…";
+    if ([self.currentAction isEqualToString:@"native-kiosk"]) return @"正在啟動 Mac 原生儀表板…";
+    if ([self.currentAction isEqualToString:@"screensaver"]) return @"正在啟動螢幕保護…";
     if ([self.currentAction isEqualToString:@"stop"]) return @"正在停止輸出…";
     if ([self.currentAction isEqualToString:@"restart"]) return @"正在重新啟動輸出…";
     return @"正在套用設定…";
@@ -115,7 +119,7 @@
     [menu addItem:self.errorHeader];
     [menu addItem:NSMenuItem.separatorItem];
 
-    NSArray *modes=@[@[@"kiosk",@"Kiosk"],@[@"desktop",@"延伸桌面"],@[@"stop",@"停止輸出"]];
+    NSArray *modes=@[@[@"kiosk",@"Kiosk（遠端來源）"],@[@"native-kiosk",@"Mac 原生儀表板"],@[@"screensaver",@"螢幕保護（原生時鐘）"],@[@"desktop",@"延伸桌面"],@[@"stop",@"停止輸出（黑畫面）"]];
     for (NSArray<NSString *> *mode in modes) {
         NSMenuItem *item=[self actionItem:mode[1] action:mode[0] value:nil];
         NSImage *radio=[NSImage imageWithSystemSymbolName:@"circle.fill" accessibilityDescription:nil];

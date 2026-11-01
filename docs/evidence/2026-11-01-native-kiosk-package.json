@@ -1,0 +1,72 @@
+{
+  "recorded_at": "2026-11-01T14:30:33.234765+08:00",
+  "version": "1.0.2",
+  "build": "4",
+  "strict_signature_exit": 0,
+  "lifecycle_checks": [
+    {
+      "action": "status",
+      "exit": 0,
+      "status": {
+        "ok": true,
+        "mode": "native-kiosk",
+        "desktop_fps": 60,
+        "desktop_quality": 1.0,
+        "kiosk_quality": 1.0,
+        "test_window": false,
+        "last_error": "",
+        "launch_at_login": true,
+        "logs_path": "/Users/chenyuhsieh/Library/Logs/digiter-xpander-kiosk",
+        "configured": true
+      }
+    },
+    {
+      "action": "shutdown",
+      "exit": 0,
+      "status": {
+        "ok": true,
+        "mode": "stopped",
+        "desktop_fps": 60,
+        "desktop_quality": 1.0,
+        "kiosk_quality": 1.0,
+        "test_window": false,
+        "last_error": "",
+        "launch_at_login": true,
+        "logs_path": "/Users/chenyuhsieh/Library/Logs/digiter-xpander-kiosk",
+        "configured": true
+      }
+    },
+    {
+      "action": "resume",
+      "exit": 0,
+      "status": {
+        "ok": true,
+        "mode": "native-kiosk",
+        "desktop_fps": 60,
+        "desktop_quality": 1.0,
+        "kiosk_quality": 1.0,
+        "test_window": false,
+        "last_error": "",
+        "launch_at_login": true,
+        "logs_path": "/Users/chenyuhsieh/Library/Logs/digiter-xpander-kiosk",
+        "configured": true
+      }
+    }
+  ],
+  "packages": {
+    "MSI-Xpander-1.0.2-arm64.dmg": {
+      "bytes": 15705887,
+      "sha256": "8d80b9a9090bf13d8e6a1104e15d29b595088a0eca3b78809919bfdc3845f380"
+    },
+    "MSI-Xpander-1.0.2-arm64.zip": {
+      "bytes": 14726356,
+      "sha256": "cde7bf1f526ef3a987f1025c2c2d3b9d8eedee0d93a633f67aba22562ec92eb2"
+    }
+  },
+  "jpeg_profiles": {
+    "dashboard": "1920x720 baseline 4:2:0 sampling 22 11 11",
+    "screensaver": "1920x720 baseline 4:2:0 sampling 22 11 11"
+  },
+  "screensaver_implementation": "Custom native ScreenSaverView clock, not Apple Aerial/system video assets.",
+  "privacy": "No source command, frame contents, screen recordings, signing keys or private configuration included."
+}
