@@ -98,15 +98,34 @@ if after_hashes != before["source_sha256"]:
 after_dependencies = {name: importlib.metadata.version(name) for name in before["build_dependencies"]}
 if after_dependencies != before["build_dependencies"]:
     raise SystemExit("Packaging dependencies changed during freezing; rerun the build")
+# PyInstaller processes framework dylibs in its cache as standalone Mach-O files.
+# Once collected into a .framework, they need the bundle's Info.plist/resource
+# seal signed at the final framework root as well. Sign nested frameworks first.
+frameworks = sorted((path for path in bundle.rglob("*.framework")
+                     if path.is_dir() and not path.is_symlink()),
+                    key=lambda path: len(path.parts), reverse=True)
+for framework in frameworks:
+    subprocess.run(["/usr/bin/codesign", "--force", "--sign", before["signing_identity"],
+                    "--options", "runtime", str(framework)], check=True)
 # Verify every collected Mach-O, including embedded Python/Pillow libraries.
 # PyInstaller signs these with the supplied identity; no signing key is copied.
 checked = []
+verified_targets = set()
 for path in sorted(bundle.rglob("*")):
     if not path.is_file() or path.is_symlink():
         continue
     kind = subprocess.check_output(["/usr/bin/file", "-b", str(path)], text=True)
     if "Mach-O" in kind:
-        subprocess.run(["/usr/bin/codesign", "--verify", "--strict", str(path)], check=True)
+        # A framework's main executable is verified as part of its code bundle;
+        # verifying that file as a standalone dylib loses the resource context.
+        target = path
+        for framework in frameworks:
+            if path.is_relative_to(framework) and path.name == framework.stem:
+                target = framework
+                break
+        if target not in verified_targets:
+            subprocess.run(["/usr/bin/codesign", "--verify", "--strict", str(target)], check=True)
+            verified_targets.add(target)
         checked.append(str(path.relative_to(bundle)))
 if not checked:
     raise SystemExit("Frozen controller contains no Mach-O executable")
@@ -123,6 +142,7 @@ metadata = {
     "bundle_bytes_before_metadata": sum(path.stat().st_size for path in bundle.rglob("*") if path.is_file() and not path.is_symlink()),
     "verified_macho_count": len(checked),
     "verified_macho_files": checked,
+    "resigned_frameworks": [str(path.relative_to(bundle)) for path in frameworks],
     "recipient_requires_python_install": False,
 }
 (bundle/"build-provenance.json").write_text(json.dumps(metadata, indent=2)+"\n")
