@@ -1,0 +1,165 @@
+HARNESS: direct bulk-to-bulk desktop restart, no physical unplug/replug; priorPID7885 retained
+HARNESS: MSI_BRIDGE_ENCODER=vt MSI_VT_QUALITY=0.9 MSI_DESKTOP_TRANSPORT=bulk MSI_DESKTOP_FPS=60 target/release/msi-xpander desktop
+HARNESS: started 2026-11-01 00:26:48 +0800
+Bridge encoder: vt (required hardware JPEG)
+Physical HDR baseline: BenQ RD280U id=2 enabled=0
+Physical HDR baseline: DELL U2717D id=1 enabled=0
+Physical HDR baseline: MSI MPG341CQR id=3 enabled=1
+Virtual color descriptor: system defaults
+Owned virtual display ID 32; existing display IDs excluded from configuration
+Available mode: 800x600 logical, 800x600 pixels
+Available mode: 1024x768 logical, 1024x768 pixels
+Available mode: 1280x480 logical, 1280x480 pixels
+Available mode: 1280x960 logical, 1280x960 pixels
+Available mode: 1344x504 logical, 1344x504 pixels
+Available mode: 1344x1008 logical, 1344x1008 pixels
+Available mode: 1600x600 logical, 1600x600 pixels
+Available mode: 1600x1200 logical, 1600x1200 pixels
+Available mode: 1920x720 logical, 1920x720 pixels
+Available mode: 640x480 logical, 640x480 pixels
+Available mode: 960x360 logical, 960x360 pixels
+Virtual desktop 32: 1920x720 logical, 1920x720 pixels, HiDPI=no; right edge at x=3360
+Physical HDR check [virtual display configured]: BenQ RD280U expected=0 before=0 after=0 result=0
+Physical HDR check [virtual display configured]: DELL U2717D expected=0 before=0 after=0 result=0
+Physical HDR check [virtual display configured]: MSI MPG341CQR expected=1 before=1 after=1 result=0
+COLOR DIAGNOSTIC / CAPTURE: starting screen capture
+Capture color conversion: source display default
+Clock window target display 32, actual display 32, frame {{3380, 590}, {650, 280}}
+Capture target: 60 fps; backend=continuous SCStream
+Capture geometry refreshed: 1920x720 logical, 1920x720 pixels -> 1920x720 output, stretch to fill
+Continuous capture running on retained virtual display 32
+Physical HDR check [capture started/recovered]: BenQ RD280U expected=0 before=0 after=0 result=0
+Physical HDR check [capture started/recovered]: DELL U2717D expected=0 before=0 after=0 result=0
+Physical HDR check [capture started/recovered]: MSI MPG341CQR expected=1 before=1 after=1 result=0
+VT JPEG hardware confirmed [before encode]: EncoderID=com.apple.videotoolbox.videoencoder.jpeg.ajpeg registry_hardware=true quality=0.90
+VT JPEG hardware confirmed [after first encode]: EncoderID=com.apple.videotoolbox.videoencoder.jpeg.ajpeg registry_hardware=true quality=0.90
+Captured virtual desktop: 1 frames (JPEG); 370110 bytes; VT encode 6.786ms
+Live transport pacing: 0 microseconds per report
+Live desktop transport: bulk
+Bulk frame pacing: 60.00 fps; regular-quality first frame (no quality-1 startup frame)
+Live JPEG quality: 55; native output dimensions retained
+Capture epoch changed to Some(0); refresh USB session after wake/recovery
+Display parameters validated; starting host challenge
+Host challenge accepted; requesting device proof
+Device proof validated and answered
+Bulk USB session ready/reconnected; first desktop JPEG uses regular quality, sequence 0x100000
+Captured desktop output: 1920x720 pixels; JPEG worker overlaps USB sending
+Live desktop: 1 frames, 6.08 fps, 370186 JPEG bytes, capture-to-send age Some(13.589) ms, 11 old captures dropped
+HARNESS: first transmitted frame after 3.365s; active60-second timer started
+Live desktop: 20 frames, 39.49 fps, 370220 JPEG bytes, capture-to-send age Some(11.634) ms, 12 old captures dropped
+Recent throughput (includes idle gaps): 57.03 fps; mean JPEG worker 2.9ms, USB 8.8ms per frame (overlapping stages)
+Clock window target display 32, actual display 32, frame {{3380, 590}, {650, 280}}
+Physical HDR check [capture settled]: BenQ RD280U expected=0 before=0 after=0 result=0
+Physical HDR check [capture settled]: DELL U2717D expected=0 before=0 after=0 result=0
+Physical HDR check [capture settled]: MSI MPG341CQR expected=1 before=1 after=1 result=0
+Live desktop: 40 frames, 19.64 fps, 386457 JPEG bytes, capture-to-send age Some(17.257) ms, 12 old captures dropped
+Recent throughput (includes idle gaps): 13.07 fps; mean JPEG worker 3.1ms, USB 8.9ms per frame (overlapping stages)
+Live desktop: 60 frames, 25.04 fps, 386457 JPEG bytes, capture-to-send age Some(18.695) ms, 13 old captures dropped
+Recent throughput (includes idle gaps): 55.71 fps; mean JPEG worker 3.3ms, USB 9.2ms per frame (overlapping stages)
+Live desktop: 80 frames, 29.03 fps, 386457 JPEG bytes, capture-to-send age Some(24.751) ms, 14 old captures dropped
+Recent throughput (includes idle gaps): 55.59 fps; mean JPEG worker 3.2ms, USB 9.2ms per frame (overlapping stages)
+Live desktop: 100 frames, 32.07 fps, 386272 JPEG bytes, capture-to-send age Some(28.395) ms, 15 old captures dropped
+Recent throughput (includes idle gaps): 55.14 fps; mean JPEG worker 3.0ms, USB 9.1ms per frame (overlapping stages)
+Captured virtual desktop: 120 frames (JPEG); 386272 bytes; VT encode 2.575ms
+Live desktop: 120 frames, 34.48 fps, 386272 JPEG bytes, capture-to-send age Some(15.91) ms, 17 old captures dropped
+Recent throughput (includes idle gaps): 55.35 fps; mean JPEG worker 3.1ms, USB 9.0ms per frame (overlapping stages)
+Live desktop: 140 frames, 34.67 fps, 386631 JPEG bytes, capture-to-send age Some(25.731) ms, 17 old captures dropped
+Recent throughput (includes idle gaps): 35.85 fps; mean JPEG worker 3.2ms, USB 9.2ms per frame (overlapping stages)
+Live desktop: 160 frames, 31.68 fps, 387219 JPEG bytes, capture-to-send age Some(15.145) ms, 18 old captures dropped
+Recent throughput (includes idle gaps): 19.74 fps; mean JPEG worker 3.3ms, USB 9.2ms per frame (overlapping stages)
+Live desktop: 180 frames, 33.26 fps, 386435 JPEG bytes, capture-to-send age Some(18.309) ms, 19 old captures dropped
+Recent throughput (includes idle gaps): 55.39 fps; mean JPEG worker 2.9ms, USB 9.2ms per frame (overlapping stages)
+Live desktop: 200 frames, 34.62 fps, 387141 JPEG bytes, capture-to-send age Some(27.861) ms, 20 old captures dropped
+Recent throughput (includes idle gaps): 54.90 fps; mean JPEG worker 2.5ms, USB 9.1ms per frame (overlapping stages)
+Captured virtual desktop: 240 frames (JPEG); 386529 bytes; VT encode 3.453ms
+Live desktop: 220 frames, 34.37 fps, 386701 JPEG bytes, capture-to-send age Some(12.499) ms, 21 old captures dropped
+Recent throughput (includes idle gaps): 32.06 fps; mean JPEG worker 2.9ms, USB 9.2ms per frame (overlapping stages)
+Live desktop: 240 frames, 35.50 fps, 386960 JPEG bytes, capture-to-send age Some(17.205) ms, 22 old captures dropped
+Recent throughput (includes idle gaps): 55.35 fps; mean JPEG worker 2.6ms, USB 9.1ms per frame (overlapping stages)
+Live desktop: 260 frames, 36.52 fps, 387084 JPEG bytes, capture-to-send age Some(22.471) ms, 23 old captures dropped
+Recent throughput (includes idle gaps): 55.85 fps; mean JPEG worker 3.0ms, USB 9.3ms per frame (overlapping stages)
+Live desktop: 280 frames, 36.82 fps, 387197 JPEG bytes, capture-to-send age Some(13.853) ms, 24 old captures dropped
+Recent throughput (includes idle gaps): 41.25 fps; mean JPEG worker 3.0ms, USB 9.2ms per frame (overlapping stages)
+Live desktop: 300 frames, 37.57 fps, 382953 JPEG bytes, capture-to-send age Some(25.347) ms, 24 old captures dropped
+Recent throughput (includes idle gaps): 52.66 fps; mean JPEG worker 3.1ms, USB 9.1ms per frame (overlapping stages)
+Live desktop: 320 frames, 38.35 fps, 419164 JPEG bytes, capture-to-send age Some(27.797) ms, 25 old captures dropped
+Recent throughput (includes idle gaps): 55.67 fps; mean JPEG worker 2.9ms, USB 9.6ms per frame (overlapping stages)
+Captured virtual desktop: 360 frames (JPEG); 434010 bytes; VT encode 4.100ms
+Live desktop: 340 frames, 38.44 fps, 433887 JPEG bytes, capture-to-send age Some(25.33) ms, 25 old captures dropped
+Recent throughput (includes idle gaps): 39.96 fps; mean JPEG worker 3.2ms, USB 10.0ms per frame (overlapping stages)
+Live desktop: 360 frames, 38.21 fps, 433298 JPEG bytes, capture-to-send age Some(13.039) ms, 25 old captures dropped
+Recent throughput (includes idle gaps): 34.64 fps; mean JPEG worker 2.7ms, USB 10.1ms per frame (overlapping stages)
+Live desktop: 380 frames, 37.49 fps, 433842 JPEG bytes, capture-to-send age Some(22.195) ms, 25 old captures dropped
+Recent throughput (includes idle gaps): 27.94 fps; mean JPEG worker 2.7ms, USB 10.2ms per frame (overlapping stages)
+Live desktop: 400 frames, 38.09 fps, 433336 JPEG bytes, capture-to-send age Some(26.546) ms, 26 old captures dropped
+Recent throughput (includes idle gaps): 55.04 fps; mean JPEG worker 2.1ms, USB 10.0ms per frame (overlapping stages)
+Live desktop: 420 frames, 38.68 fps, 434258 JPEG bytes, capture-to-send age Some(26.016) ms, 27 old captures dropped
+Recent throughput (includes idle gaps): 56.12 fps; mean JPEG worker 2.2ms, USB 10.0ms per frame (overlapping stages)
+Live desktop: 440 frames, 38.64 fps, 434062 JPEG bytes, capture-to-send age Some(13.59) ms, 28 old captures dropped
+Recent throughput (includes idle gaps): 37.82 fps; mean JPEG worker 2.4ms, USB 10.1ms per frame (overlapping stages)
+Captured virtual desktop: 480 frames (JPEG); 449630 bytes; VT encode 4.614ms
+Live desktop: 460 frames, 37.78 fps, 429888 JPEG bytes, capture-to-send age Some(15.137) ms, 28 old captures dropped
+Recent throughput (includes idle gaps): 25.34 fps; mean JPEG worker 3.3ms, USB 10.6ms per frame (overlapping stages)
+Live desktop: 480 frames, 38.26 fps, 429860 JPEG bytes, capture-to-send age Some(18.927) ms, 28 old captures dropped
+Recent throughput (includes idle gaps): 53.84 fps; mean JPEG worker 4.2ms, USB 10.2ms per frame (overlapping stages)
+Live desktop: 500 frames, 38.69 fps, 429815 JPEG bytes, capture-to-send age Some(13.812) ms, 29 old captures dropped
+Recent throughput (includes idle gaps): 53.11 fps; mean JPEG worker 4.5ms, USB 10.2ms per frame (overlapping stages)
+Live desktop: 520 frames, 39.16 fps, 429508 JPEG bytes, capture-to-send age Some(28.08) ms, 29 old captures dropped
+Recent throughput (includes idle gaps): 56.17 fps; mean JPEG worker 3.0ms, USB 10.3ms per frame (overlapping stages)
+Live desktop: 540 frames, 39.41 fps, 429050 JPEG bytes, capture-to-send age Some(23.723) ms, 30 old captures dropped
+Recent throughput (includes idle gaps): 47.28 fps; mean JPEG worker 2.9ms, USB 10.1ms per frame (overlapping stages)
+Live desktop: 560 frames, 39.83 fps, 429257 JPEG bytes, capture-to-send age Some(22.889) ms, 31 old captures dropped
+Recent throughput (includes idle gaps): 55.70 fps; mean JPEG worker 2.9ms, USB 10.2ms per frame (overlapping stages)
+Captured virtual desktop: 600 frames (JPEG); 429257 bytes; VT encode 2.710ms
+Live desktop: 580 frames, 40.22 fps, 429257 JPEG bytes, capture-to-send age Some(22.729) ms, 32 old captures dropped
+Recent throughput (includes idle gaps): 55.78 fps; mean JPEG worker 2.8ms, USB 10.2ms per frame (overlapping stages)
+Live desktop: 600 frames, 38.72 fps, 429143 JPEG bytes, capture-to-send age Some(15.296) ms, 33 old captures dropped
+Recent throughput (includes idle gaps): 18.60 fps; mean JPEG worker 3.8ms, USB 10.2ms per frame (overlapping stages)
+Live desktop: 620 frames, 25.01 fps, 429014 JPEG bytes, capture-to-send age Some(14.235) ms, 33 old captures dropped
+Recent throughput (includes idle gaps): 2.15 fps; mean JPEG worker 3.6ms, USB 10.2ms per frame (overlapping stages)
+Live desktop: 640 frames, 22.27 fps, 429017 JPEG bytes, capture-to-send age Some(14.534) ms, 33 old captures dropped
+Recent throughput (includes idle gaps): 5.06 fps; mean JPEG worker 3.5ms, USB 10.1ms per frame (overlapping stages)
+Live desktop: 660 frames, 17.84 fps, 429317 JPEG bytes, capture-to-send age Some(19.074) ms, 33 old captures dropped
+Recent throughput (includes idle gaps): 2.42 fps; mean JPEG worker 3.6ms, USB 10.2ms per frame (overlapping stages)
+Live desktop: 680 frames, 18.14 fps, 429357 JPEG bytes, capture-to-send age Some(14.072) ms, 33 old captures dropped
+Recent throughput (includes idle gaps): 42.47 fps; mean JPEG worker 3.5ms, USB 10.4ms per frame (overlapping stages)
+Captured virtual desktop: 720 frames (JPEG); 429373 bytes; VT encode 4.915ms
+Live desktop: 700 frames, 18.35 fps, 429393 JPEG bytes, capture-to-send age Some(14.316) ms, 33 old captures dropped
+Recent throughput (includes idle gaps): 29.95 fps; mean JPEG worker 3.3ms, USB 10.2ms per frame (overlapping stages)
+Live desktop: 720 frames, 18.70 fps, 429176 JPEG bytes, capture-to-send age Some(26.644) ms, 33 old captures dropped
+Recent throughput (includes idle gaps): 56.70 fps; mean JPEG worker 2.8ms, USB 10.1ms per frame (overlapping stages)
+Live desktop: 740 frames, 19.05 fps, 429188 JPEG bytes, capture-to-send age Some(26.719) ms, 34 old captures dropped
+Recent throughput (includes idle gaps): 55.92 fps; mean JPEG worker 3.2ms, USB 10.2ms per frame (overlapping stages)
+Live desktop: 760 frames, 19.38 fps, 429928 JPEG bytes, capture-to-send age Some(24.078) ms, 35 old captures dropped
+Recent throughput (includes idle gaps): 56.32 fps; mean JPEG worker 2.9ms, USB 10.2ms per frame (overlapping stages)
+Live desktop: 780 frames, 19.72 fps, 429939 JPEG bytes, capture-to-send age Some(23.041) ms, 36 old captures dropped
+Recent throughput (includes idle gaps): 56.51 fps; mean JPEG worker 3.1ms, USB 10.2ms per frame (overlapping stages)
+Live desktop: 800 frames, 20.04 fps, 429416 JPEG bytes, capture-to-send age Some(28.224) ms, 37 old captures dropped
+Recent throughput (includes idle gaps): 55.54 fps; mean JPEG worker 2.7ms, USB 10.3ms per frame (overlapping stages)
+Captured virtual desktop: 840 frames (JPEG); 429421 bytes; VT encode 3.541ms
+Live desktop: 820 frames, 20.24 fps, 430134 JPEG bytes, capture-to-send age Some(24.941) ms, 37 old captures dropped
+Recent throughput (includes idle gaps): 34.02 fps; mean JPEG worker 3.2ms, USB 10.4ms per frame (overlapping stages)
+Live desktop: 840 frames, 20.48 fps, 397203 JPEG bytes, capture-to-send age Some(23.702) ms, 37 old captures dropped
+Recent throughput (includes idle gaps): 40.12 fps; mean JPEG worker 4.9ms, USB 9.4ms per frame (overlapping stages)
+Live desktop: 860 frames, 20.79 fps, 397252 JPEG bytes, capture-to-send age Some(14.636) ms, 39 old captures dropped
+Recent throughput (includes idle gaps): 54.85 fps; mean JPEG worker 2.2ms, USB 9.2ms per frame (overlapping stages)
+Live desktop: 880 frames, 20.93 fps, 396850 JPEG bytes, capture-to-send age Some(13.602) ms, 40 old captures dropped
+Recent throughput (includes idle gaps): 29.71 fps; mean JPEG worker 3.3ms, USB 9.2ms per frame (overlapping stages)
+Live desktop: 900 frames, 21.22 fps, 396617 JPEG bytes, capture-to-send age Some(22.994) ms, 41 old captures dropped
+Recent throughput (includes idle gaps): 54.48 fps; mean JPEG worker 2.6ms, USB 9.2ms per frame (overlapping stages)
+Captured virtual desktop: 960 frames (JPEG); 396617 bytes; VT encode 2.319ms
+Live desktop: 920 frames, 21.51 fps, 396617 JPEG bytes, capture-to-send age Some(12.501) ms, 43 old captures dropped
+Recent throughput (includes idle gaps): 55.44 fps; mean JPEG worker 2.0ms, USB 9.2ms per frame (overlapping stages)
+Live desktop: 940 frames, 21.79 fps, 396511 JPEG bytes, capture-to-send age Some(17.505) ms, 44 old captures dropped
+Recent throughput (includes idle gaps): 54.88 fps; mean JPEG worker 2.1ms, USB 9.2ms per frame (overlapping stages)
+Live desktop: 960 frames, 22.06 fps, 391836 JPEG bytes, capture-to-send age Some(25.238) ms, 44 old captures dropped
+Recent throughput (includes idle gaps): 53.66 fps; mean JPEG worker 5.2ms, USB 9.6ms per frame (overlapping stages)
+Live desktop: 980 frames, 20.29 fps, 391735 JPEG bytes, capture-to-send age Some(14.841) ms, 44 old captures dropped
+Recent throughput (includes idle gaps): 4.19 fps; mean JPEG worker 4.5ms, USB 9.4ms per frame (overlapping stages)
+Live desktop: 1000 frames, 18.94 fps, 391660 JPEG bytes, capture-to-send age Some(13.814) ms, 44 old captures dropped
+Recent throughput (includes idle gaps): 4.44 fps; mean JPEG worker 4.0ms, USB 9.4ms per frame (overlapping stages)
+Live desktop: 1020 frames, 17.70 fps, 391662 JPEG bytes, capture-to-send age Some(13.602) ms, 44 old captures dropped
+Recent throughput (includes idle gaps): 4.15 fps; mean JPEG worker 3.4ms, USB 9.4ms per frame (overlapping stages)
+Captured virtual desktop: 1080 frames (JPEG); 391470 bytes; VT encode 3.320ms
+HARNESS: active duration 60.16s; sending Ctrl-C/SIGINT
+HARNESS: exit=-2;completed60s=True

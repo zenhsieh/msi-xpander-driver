@@ -1,0 +1,1 @@
+2026-11-01 00:30:37 +0800 desktop stopped -> kiosk launchagent started with bulk; same connected panel; no USBreset/replug or bundledDashboardJPG; initial binary uses existingJPEG85, quality100 environment staged for upcoming encoder-option build.

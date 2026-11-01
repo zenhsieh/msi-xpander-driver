@@ -1,0 +1,72 @@
+HARNESS: native VT kiosk -> VT desktop1.0 -> native VT kiosk; no unplug/reset/priming
+Bridge encoder: vt (required hardware JPEG)
+Physical HDR baseline: BenQ RD280U id=2 enabled=0
+Physical HDR baseline: DELL U2717D id=1 enabled=0
+Physical HDR baseline: MSI MPG341CQR id=3 enabled=1
+Virtual color descriptor: system defaults
+Owned virtual display ID 33; existing display IDs excluded from configuration
+Available mode: 800x600 logical, 800x600 pixels
+Available mode: 1024x768 logical, 1024x768 pixels
+Available mode: 1280x480 logical, 1280x480 pixels
+Available mode: 1280x960 logical, 1280x960 pixels
+Available mode: 1344x504 logical, 1344x504 pixels
+Available mode: 1344x1008 logical, 1344x1008 pixels
+Available mode: 1600x600 logical, 1600x600 pixels
+Available mode: 1600x1200 logical, 1600x1200 pixels
+Available mode: 1920x720 logical, 1920x720 pixels
+Available mode: 640x480 logical, 640x480 pixels
+Available mode: 960x360 logical, 960x360 pixels
+Virtual desktop 33: 1920x720 logical, 1920x720 pixels, HiDPI=no; right edge at x=3360
+Physical HDR check [virtual display configured]: BenQ RD280U expected=0 before=0 after=0 result=0
+Physical HDR check [virtual display configured]: DELL U2717D expected=0 before=0 after=0 result=0
+Physical HDR check [virtual display configured]: MSI MPG341CQR expected=1 before=1 after=1 result=0
+COLOR DIAGNOSTIC / CAPTURE: starting screen capture
+Capture color conversion: source display default
+Clock window target display 33, actual display 33, frame {{3380, 590}, {650, 280}}
+Capture target: 60 fps; backend=continuous SCStream
+Capture geometry refreshed: 1920x720 logical, 1920x720 pixels -> 1920x720 output, stretch to fill
+Continuous capture running on retained virtual display 33
+Physical HDR check [capture started/recovered]: BenQ RD280U expected=0 before=0 after=0 result=0
+Physical HDR check [capture started/recovered]: DELL U2717D expected=0 before=0 after=0 result=0
+Physical HDR check [capture started/recovered]: MSI MPG341CQR expected=1 before=1 after=1 result=0
+VT JPEG hardware confirmed [before encode]: EncoderID=com.apple.videotoolbox.videoencoder.jpeg.ajpeg registry_hardware=true quality=1.00
+VT JPEG hardware confirmed [after first encode]: EncoderID=com.apple.videotoolbox.videoencoder.jpeg.ajpeg registry_hardware=true quality=1.00
+Captured virtual desktop: 1 frames (JPEG); 750671 bytes; VT encode 9.212ms
+Live transport pacing: 0 microseconds per report
+Live desktop transport: bulk
+Bulk frame pacing: 60.00 fps; regular-quality first frame (no quality-1 startup frame)
+Live JPEG quality: VT 1.0 (bridge JPEG passthrough); native output dimensions retained
+Capture epoch changed to Some(0); refresh USB session after wake/recovery
+Display parameters validated; starting host challenge
+Host challenge accepted; requesting device proof
+Device proof validated and answered
+Bulk USB session ready/reconnected; first JPEG uses regular quality, sequence 0x100000
+Captured desktop output: 1920x720 pixels; JPEG worker overlaps USB sending
+Live desktop: 1 frames, 5.79 fps, 750787 JPEG bytes, capture-to-send age Some(23.857) ms, 11 old captures dropped
+HARNESS: first desktop frame after 3.813s
+Live desktop: 20 frames, 32.32 fps, 750777 JPEG bytes, capture-to-send age Some(45.539) ms, 17 old captures dropped
+Recent throughput (includes idle gaps): 43.16 fps; mean JPEG worker 3.1ms, USB 23.2ms per frame (overlapping stages)
+Clock window target display 33, actual display 33, frame {{3380, 590}, {650, 280}}
+Physical HDR check [capture settled]: BenQ RD280U expected=0 before=0 after=0 result=0
+Physical HDR check [capture settled]: DELL U2717D expected=0 before=0 after=0 result=0
+Physical HDR check [capture settled]: MSI MPG341CQR expected=1 before=1 after=1 result=0
+Live desktop: 40 frames, 14.43 fps, 775721 JPEG bytes, capture-to-send age Some(21.488) ms, 21 old captures dropped
+Recent throughput (includes idle gaps): 9.29 fps; mean JPEG worker 3.6ms, USB 22.5ms per frame (overlapping stages)
+Live desktop: 60 frames, 14.22 fps, 775406 JPEG bytes, capture-to-send age Some(32.409) ms, 26 old captures dropped
+Recent throughput (includes idle gaps): 13.81 fps; mean JPEG worker 3.6ms, USB 22.1ms per frame (overlapping stages)
+Live desktop: 80 frames, 17.00 fps, 775406 JPEG bytes, capture-to-send age Some(38.565) ms, 34 old captures dropped
+Recent throughput (includes idle gaps): 41.15 fps; mean JPEG worker 3.6ms, USB 24.3ms per frame (overlapping stages)
+Captured virtual desktop: 120 frames (JPEG); 775406 bytes; VT encode 2.948ms
+Live desktop: 100 frames, 19.26 fps, 775726 JPEG bytes, capture-to-send age Some(29.495) ms, 43 old captures dropped
+Recent throughput (includes idle gaps): 41.15 fps; mean JPEG worker 3.7ms, USB 24.3ms per frame (overlapping stages)
+Live desktop: 120 frames, 21.08 fps, 775726 JPEG bytes, capture-to-send age Some(33.129) ms, 47 old captures dropped
+Recent throughput (includes idle gaps): 40.01 fps; mean JPEG worker 3.8ms, USB 23.1ms per frame (overlapping stages)
+Live desktop: 140 frames, 15.91 fps, 775474 JPEG bytes, capture-to-send age Some(21.232) ms, 51 old captures dropped
+Recent throughput (includes idle gaps): 6.43 fps; mean JPEG worker 3.8ms, USB 21.9ms per frame (overlapping stages)
+Live desktop: 160 frames, 17.24 fps, 775612 JPEG bytes, capture-to-send age Some(39.929) ms, 58 old captures dropped
+Recent throughput (includes idle gaps): 41.76 fps; mean JPEG worker 4.1ms, USB 23.9ms per frame (overlapping stages)
+Captured virtual desktop: 240 frames (JPEG); 775612 bytes; VT encode 3.969ms
+Live desktop: 180 frames, 18.24 fps, 775772 JPEG bytes, capture-to-send age Some(36.338) ms, 64 old captures dropped
+Recent throughput (includes idle gaps): 33.80 fps; mean JPEG worker 4.0ms, USB 23.6ms per frame (overlapping stages)
+HARNESS: active 10.10s; returning to native VT kiosk
+HARNESS: kiosk service restored; desktop10s_completed=True

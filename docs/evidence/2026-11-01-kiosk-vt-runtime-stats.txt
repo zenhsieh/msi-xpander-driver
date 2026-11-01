@@ -1,0 +1,121 @@
+Filtered runtime sample: only this feature's public encoder identity / timing metadata.
+VTImageEncoder: before encode EncoderID=com.apple.videotoolbox.videoencoder.jpeg.ajpeg registry_hardware=true property_status=0
+VTImageEncoder: after encode EncoderID=com.apple.videotoolbox.videoencoder.jpeg.ajpeg registry_hardware=true property_status=0
+VTImageEncoder: quality=1.000 dimensions=1920x720 jpeg_bytes=593042 encode_ms=27.677
+Kiosk 1920x720: 593042 JPEG bytes; USB 14.0ms; encode pipeline 397.2ms; encoder=Vt
+VTImageEncoder: before encode EncoderID=com.apple.videotoolbox.videoencoder.jpeg.ajpeg registry_hardware=true property_status=0
+VTImageEncoder: after encode EncoderID=com.apple.videotoolbox.videoencoder.jpeg.ajpeg registry_hardware=true property_status=0
+VTImageEncoder: quality=1.000 dimensions=1920x720 jpeg_bytes=592875 encode_ms=33.711
+Kiosk 1920x720: 592875 JPEG bytes; USB 14.0ms; encode pipeline 483.1ms; encoder=Vt
+VTImageEncoder: before encode EncoderID=com.apple.videotoolbox.videoencoder.jpeg.ajpeg registry_hardware=true property_status=0
+VTImageEncoder: after encode EncoderID=com.apple.videotoolbox.videoencoder.jpeg.ajpeg registry_hardware=true property_status=0
+VTImageEncoder: quality=1.000 dimensions=1920x720 jpeg_bytes=592835 encode_ms=30.749
+Kiosk 1920x720: 592835 JPEG bytes; USB 14.1ms; encode pipeline 387.3ms; encoder=Vt
+VTImageEncoder: before encode EncoderID=com.apple.videotoolbox.videoencoder.jpeg.ajpeg registry_hardware=true property_status=0
+VTImageEncoder: after encode EncoderID=com.apple.videotoolbox.videoencoder.jpeg.ajpeg registry_hardware=true property_status=0
+VTImageEncoder: quality=1.000 dimensions=1920x720 jpeg_bytes=592437 encode_ms=30.806
+Kiosk 1920x720: 592437 JPEG bytes; USB 14.3ms; encode pipeline 395.1ms; encoder=Vt
+VTImageEncoder: before encode EncoderID=com.apple.videotoolbox.videoencoder.jpeg.ajpeg registry_hardware=true property_status=0
+VTImageEncoder: after encode EncoderID=com.apple.videotoolbox.videoencoder.jpeg.ajpeg registry_hardware=true property_status=0
+VTImageEncoder: quality=1.000 dimensions=1920x720 jpeg_bytes=592959 encode_ms=41.692
+Kiosk 1920x720: 592959 JPEG bytes; USB 13.7ms; encode pipeline 348.2ms; encoder=Vt
+VTImageEncoder: before encode EncoderID=com.apple.videotoolbox.videoencoder.jpeg.ajpeg registry_hardware=true property_status=0
+VTImageEncoder: after encode EncoderID=com.apple.videotoolbox.videoencoder.jpeg.ajpeg registry_hardware=true property_status=0
+VTImageEncoder: quality=1.000 dimensions=1920x720 jpeg_bytes=593189 encode_ms=36.753
+Kiosk 1920x720: 593189 JPEG bytes; USB 13.9ms; encode pipeline 411.5ms; encoder=Vt
+VTImageEncoder: before encode EncoderID=com.apple.videotoolbox.videoencoder.jpeg.ajpeg registry_hardware=true property_status=0
+VTImageEncoder: after encode EncoderID=com.apple.videotoolbox.videoencoder.jpeg.ajpeg registry_hardware=true property_status=0
+VTImageEncoder: quality=1.000 dimensions=1920x720 jpeg_bytes=592796 encode_ms=35.781
+Kiosk 1920x720: 592796 JPEG bytes; USB 13.9ms; encode pipeline 454.3ms; encoder=Vt
+VTImageEncoder: before encode EncoderID=com.apple.videotoolbox.videoencoder.jpeg.ajpeg registry_hardware=true property_status=0
+VTImageEncoder: after encode EncoderID=com.apple.videotoolbox.videoencoder.jpeg.ajpeg registry_hardware=true property_status=0
+VTImageEncoder: quality=1.000 dimensions=1920x720 jpeg_bytes=592701 encode_ms=28.150
+Kiosk 1920x720: 592701 JPEG bytes; USB 14.1ms; encode pipeline 409.6ms; encoder=Vt
+VTImageEncoder: before encode EncoderID=com.apple.videotoolbox.videoencoder.jpeg.ajpeg registry_hardware=true property_status=0
+VTImageEncoder: after encode EncoderID=com.apple.videotoolbox.videoencoder.jpeg.ajpeg registry_hardware=true property_status=0
+VTImageEncoder: quality=1.000 dimensions=1920x720 jpeg_bytes=592133 encode_ms=34.655
+Kiosk 1920x720: 592133 JPEG bytes; USB 14.0ms; encode pipeline 391.8ms; encoder=Vt
+VTImageEncoder: before encode EncoderID=com.apple.videotoolbox.videoencoder.jpeg.ajpeg registry_hardware=true property_status=0
+VTImageEncoder: after encode EncoderID=com.apple.videotoolbox.videoencoder.jpeg.ajpeg registry_hardware=true property_status=0
+VTImageEncoder: quality=1.000 dimensions=1920x720 jpeg_bytes=591720 encode_ms=42.577
+Kiosk 1920x720: 591720 JPEG bytes; USB 13.9ms; encode pipeline 451.7ms; encoder=Vt
+VTImageEncoder: before encode EncoderID=com.apple.videotoolbox.videoencoder.jpeg.ajpeg registry_hardware=true property_status=0
+VTImageEncoder: after encode EncoderID=com.apple.videotoolbox.videoencoder.jpeg.ajpeg registry_hardware=true property_status=0
+VTImageEncoder: quality=1.000 dimensions=1920x720 jpeg_bytes=592207 encode_ms=35.246
+Kiosk 1920x720: 592207 JPEG bytes; USB 13.8ms; encode pipeline 496.2ms; encoder=Vt
+VTImageEncoder: before encode EncoderID=com.apple.videotoolbox.videoencoder.jpeg.ajpeg registry_hardware=true property_status=0
+VTImageEncoder: after encode EncoderID=com.apple.videotoolbox.videoencoder.jpeg.ajpeg registry_hardware=true property_status=0
+VTImageEncoder: quality=1.000 dimensions=1920x720 jpeg_bytes=595999 encode_ms=26.427
+Kiosk 1920x720: 595999 JPEG bytes; USB 13.8ms; encode pipeline 749.8ms; encoder=Vt
+VTImageEncoder: before encode EncoderID=com.apple.videotoolbox.videoencoder.jpeg.ajpeg registry_hardware=true property_status=0
+VTImageEncoder: after encode EncoderID=com.apple.videotoolbox.videoencoder.jpeg.ajpeg registry_hardware=true property_status=0
+VTImageEncoder: quality=1.000 dimensions=1920x720 jpeg_bytes=596051 encode_ms=33.740
+Kiosk 1920x720: 596051 JPEG bytes; USB 14.1ms; encode pipeline 404.1ms; encoder=Vt
+VTImageEncoder: before encode EncoderID=com.apple.videotoolbox.videoencoder.jpeg.ajpeg registry_hardware=true property_status=0
+VTImageEncoder: after encode EncoderID=com.apple.videotoolbox.videoencoder.jpeg.ajpeg registry_hardware=true property_status=0
+VTImageEncoder: quality=1.000 dimensions=1920x720 jpeg_bytes=595942 encode_ms=38.767
+Kiosk 1920x720: 595942 JPEG bytes; USB 14.1ms; encode pipeline 474.0ms; encoder=Vt
+VTImageEncoder: before encode EncoderID=com.apple.videotoolbox.videoencoder.jpeg.ajpeg registry_hardware=true property_status=0
+VTImageEncoder: after encode EncoderID=com.apple.videotoolbox.videoencoder.jpeg.ajpeg registry_hardware=true property_status=0
+VTImageEncoder: quality=1.000 dimensions=1920x720 jpeg_bytes=595572 encode_ms=43.172
+Kiosk 1920x720: 595572 JPEG bytes; USB 13.8ms; encode pipeline 494.4ms; encoder=Vt
+VTImageEncoder: before encode EncoderID=com.apple.videotoolbox.videoencoder.jpeg.ajpeg registry_hardware=true property_status=0
+VTImageEncoder: after encode EncoderID=com.apple.videotoolbox.videoencoder.jpeg.ajpeg registry_hardware=true property_status=0
+VTImageEncoder: quality=1.000 dimensions=1920x720 jpeg_bytes=596007 encode_ms=37.161
+Kiosk 1920x720: 596007 JPEG bytes; USB 13.8ms; encode pipeline 391.5ms; encoder=Vt
+VTImageEncoder: before encode EncoderID=com.apple.videotoolbox.videoencoder.jpeg.ajpeg registry_hardware=true property_status=0
+VTImageEncoder: after encode EncoderID=com.apple.videotoolbox.videoencoder.jpeg.ajpeg registry_hardware=true property_status=0
+VTImageEncoder: quality=1.000 dimensions=1920x720 jpeg_bytes=595357 encode_ms=26.282
+Kiosk 1920x720: 595357 JPEG bytes; USB 14.0ms; encode pipeline 426.5ms; encoder=Vt
+VTImageEncoder: before encode EncoderID=com.apple.videotoolbox.videoencoder.jpeg.ajpeg registry_hardware=true property_status=0
+VTImageEncoder: after encode EncoderID=com.apple.videotoolbox.videoencoder.jpeg.ajpeg registry_hardware=true property_status=0
+VTImageEncoder: quality=1.000 dimensions=1920x720 jpeg_bytes=595692 encode_ms=37.246
+Kiosk 1920x720: 595692 JPEG bytes; USB 14.4ms; encode pipeline 448.4ms; encoder=Vt
+VTImageEncoder: before encode EncoderID=com.apple.videotoolbox.videoencoder.jpeg.ajpeg registry_hardware=true property_status=0
+VTImageEncoder: after encode EncoderID=com.apple.videotoolbox.videoencoder.jpeg.ajpeg registry_hardware=true property_status=0
+VTImageEncoder: quality=1.000 dimensions=1920x720 jpeg_bytes=595855 encode_ms=37.847
+Kiosk 1920x720: 595855 JPEG bytes; USB 13.9ms; encode pipeline 1083.0ms; encoder=Vt
+VTImageEncoder: before encode EncoderID=com.apple.videotoolbox.videoencoder.jpeg.ajpeg registry_hardware=true property_status=0
+VTImageEncoder: after encode EncoderID=com.apple.videotoolbox.videoencoder.jpeg.ajpeg registry_hardware=true property_status=0
+VTImageEncoder: quality=1.000 dimensions=1920x720 jpeg_bytes=595543 encode_ms=37.520
+Kiosk 1920x720: 595543 JPEG bytes; USB 14.0ms; encode pipeline 408.9ms; encoder=Vt
+VTImageEncoder: before encode EncoderID=com.apple.videotoolbox.videoencoder.jpeg.ajpeg registry_hardware=true property_status=0
+VTImageEncoder: after encode EncoderID=com.apple.videotoolbox.videoencoder.jpeg.ajpeg registry_hardware=true property_status=0
+VTImageEncoder: quality=1.000 dimensions=1920x720 jpeg_bytes=595821 encode_ms=28.372
+Kiosk 1920x720: 595821 JPEG bytes; USB 13.9ms; encode pipeline 386.7ms; encoder=Vt
+VTImageEncoder: before encode EncoderID=com.apple.videotoolbox.videoencoder.jpeg.ajpeg registry_hardware=true property_status=0
+VTImageEncoder: after encode EncoderID=com.apple.videotoolbox.videoencoder.jpeg.ajpeg registry_hardware=true property_status=0
+VTImageEncoder: quality=1.000 dimensions=1920x720 jpeg_bytes=592946 encode_ms=31.250
+Kiosk 1920x720: 592946 JPEG bytes; USB 13.9ms; encode pipeline 440.6ms; encoder=Vt
+VTImageEncoder: before encode EncoderID=com.apple.videotoolbox.videoencoder.jpeg.ajpeg registry_hardware=true property_status=0
+VTImageEncoder: after encode EncoderID=com.apple.videotoolbox.videoencoder.jpeg.ajpeg registry_hardware=true property_status=0
+VTImageEncoder: quality=1.000 dimensions=1920x720 jpeg_bytes=593288 encode_ms=20.626
+Kiosk 1920x720: 593288 JPEG bytes; USB 13.9ms; encode pipeline 432.9ms; encoder=Vt
+VTImageEncoder: before encode EncoderID=com.apple.videotoolbox.videoencoder.jpeg.ajpeg registry_hardware=true property_status=0
+VTImageEncoder: after encode EncoderID=com.apple.videotoolbox.videoencoder.jpeg.ajpeg registry_hardware=true property_status=0
+VTImageEncoder: quality=1.000 dimensions=1920x720 jpeg_bytes=593292 encode_ms=39.499
+Kiosk 1920x720: 593292 JPEG bytes; USB 13.9ms; encode pipeline 458.6ms; encoder=Vt
+VTImageEncoder: before encode EncoderID=com.apple.videotoolbox.videoencoder.jpeg.ajpeg registry_hardware=true property_status=0
+VTImageEncoder: after encode EncoderID=com.apple.videotoolbox.videoencoder.jpeg.ajpeg registry_hardware=true property_status=0
+VTImageEncoder: quality=1.000 dimensions=1920x720 jpeg_bytes=597415 encode_ms=34.115
+Kiosk 1920x720: 597415 JPEG bytes; USB 13.9ms; encode pipeline 503.4ms; encoder=Vt
+VTImageEncoder: before encode EncoderID=com.apple.videotoolbox.videoencoder.jpeg.ajpeg registry_hardware=true property_status=0
+VTImageEncoder: after encode EncoderID=com.apple.videotoolbox.videoencoder.jpeg.ajpeg registry_hardware=true property_status=0
+VTImageEncoder: quality=1.000 dimensions=1920x720 jpeg_bytes=597348 encode_ms=26.519
+Kiosk 1920x720: 597348 JPEG bytes; USB 14.0ms; encode pipeline 463.6ms; encoder=Vt
+VTImageEncoder: before encode EncoderID=com.apple.videotoolbox.videoencoder.jpeg.ajpeg registry_hardware=true property_status=0
+VTImageEncoder: after encode EncoderID=com.apple.videotoolbox.videoencoder.jpeg.ajpeg registry_hardware=true property_status=0
+VTImageEncoder: quality=1.000 dimensions=1920x720 jpeg_bytes=597060 encode_ms=26.614
+Kiosk 1920x720: 597060 JPEG bytes; USB 13.8ms; encode pipeline 890.1ms; encoder=Vt
+VTImageEncoder: before encode EncoderID=com.apple.videotoolbox.videoencoder.jpeg.ajpeg registry_hardware=true property_status=0
+VTImageEncoder: after encode EncoderID=com.apple.videotoolbox.videoencoder.jpeg.ajpeg registry_hardware=true property_status=0
+VTImageEncoder: quality=1.000 dimensions=1920x720 jpeg_bytes=597258 encode_ms=30.213
+Kiosk 1920x720: 597258 JPEG bytes; USB 66.7ms; encode pipeline 494.1ms; encoder=Vt
+VTImageEncoder: before encode EncoderID=com.apple.videotoolbox.videoencoder.jpeg.ajpeg registry_hardware=true property_status=0
+VTImageEncoder: after encode EncoderID=com.apple.videotoolbox.videoencoder.jpeg.ajpeg registry_hardware=true property_status=0
+VTImageEncoder: quality=1.000 dimensions=1920x720 jpeg_bytes=597774 encode_ms=34.455
+Kiosk 1920x720: 597774 JPEG bytes; USB 14.0ms; encode pipeline 466.4ms; encoder=Vt
+VTImageEncoder: before encode EncoderID=com.apple.videotoolbox.videoencoder.jpeg.ajpeg registry_hardware=true property_status=0
+VTImageEncoder: after encode EncoderID=com.apple.videotoolbox.videoencoder.jpeg.ajpeg registry_hardware=true property_status=0
+VTImageEncoder: quality=1.000 dimensions=1920x720 jpeg_bytes=597273 encode_ms=31.213
+Kiosk 1920x720: 597273 JPEG bytes; USB 14.2ms; encode pipeline 452.4ms; encoder=Vt
