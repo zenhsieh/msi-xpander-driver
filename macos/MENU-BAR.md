@@ -9,16 +9,41 @@ Homebrew Python runtime; the minimum OS in the app metadata reflects that limit.
 ## Use
 
 Drag `MSI Xpander.app` from the disk image to Applications and open it. The
-menu-bar display icon has a **顯示** submenu with exactly five modes:
+menu-bar display icon has a **Display / 顯示** submenu with four modes:
 
-- 遠端 Kiosk: the configured PNG source, rendered remotely if configured that way.
-- 延伸桌面: a normal macOS virtual desktop, captured and sent to the panel.
-- 原生 Kiosk: a real macOS desktop for interactive system widgets. Move the
-  pointer to the panel, right-click its desktop, and choose Edit Widgets. Widgets
-  are managed by macOS, not painted or embedded by this app. This mode has a
-  distinct display identity from the ordinary desktop; no fake widget UI is used.
-- 螢幕保護模式: the custom native clock ScreenSaverView.
-- 關閉螢幕: send black after producers stop, then release USB. USB power remains on.
+- Kiosk: the configured PNG source, whether local or remote.
+- Extended Desktop / 延伸桌面: an ordinary interactive macOS virtual desktop.
+  Users choose whether to place apps or macOS desktop widgets there and use it
+  as a kiosk. There is no separate native-kiosk mode. Add widgets using the
+  desktop's Edit Widgets menu.
+- Screen Saver / 螢幕保護模式: the native clock ScreenSaverView.
+- Screen Off / 關閉螢幕: send black after producers stop, then release USB.
+  USB power remains on.
+
+The root menu contains status, Display, Settings, Tools, and Quit. Settings
+contains the Kiosk source, update rate, quality, login preference and Language.
+Tools contains widget help, test options, restart, permission help and logs.
+The old native-kiosk selection is migrated to Extended Desktop without exposing
+another mode. A legacy widget-display identity is retained if it was used, so
+existing macOS widget layout is not discarded.
+
+## Language
+
+Settings → Language offers Follow System, 繁體中文 and English. Menu titles,
+alerts, guidance and backend errors are localized. A language selection applies
+immediately by rebuilding the menu, without restarting a virtual output or USB
+producer. The screen saver can restart to update its date locale. Unsupported
+system locales fall back to English. Per-app macOS language choices are honoured
+when Follow System is selected. Screen-recording usage text has standard en and
+zh-Hant InfoPlist localizations; macOS owns the language of System Settings and
+system permission dialogs.
+
+Saved errors remain canonical and are translated on output, so a prior Chinese
+error can be shown in English after a language change. Native .strings catalogs
+have matching keys/format arguments; the frozen controller includes its error
+catalog. Neither language changes nor menu inspection allocate a virtual display.
+
+## Mac following
 
 Manual choices affect only the Xpander panel. The app follows Mac screensaver
 start/stop and workspace screen/system sleep/wake notifications. Automatic modes
@@ -32,7 +57,7 @@ copying Apple's Aerial/video assets: the panel's saver is the native clock.
 
 The first launch samples physical screen sleep state and submits a fresh system
 state, replacing stale state from an earlier app run. The app does not preallocate
-or retain a hidden virtual output: only desktop and widget modes create one,
+or retain a hidden virtual output: only Extended Desktop creates one,
 and leaving them releases it. The known MSI physical-display flash issue remains
 [open](https://github.com/zenhsieh/msi-xpander-driver/issues/1); 1280x480 also flashed,
 so no unverified resolution workaround is shipped. The bridge no longer reads
@@ -40,11 +65,10 @@ or writes physical HDR preferences through undocumented SkyLight functions.
 
 Quit blanks active output while retaining the selected mode for reopening.
 Failure to deliver black is reported. Desktop update frequency offers 30 or
-60 updates per second; JPEG quality is separate for the desktop and kiosk/widget
-modes. The live test window remains off by default and is never enabled in the
-widget mode. The **設定原生 Kiosk 小工具…** menu explains macOS widget setup.
+60 updates per second; JPEG quality is separate for the desktop and kiosk
+modes. The live test window remains off by default. Tools → Use Widgets on the Desktop explains macOS widget setup.
 
-Desktop and widget sessions need Screen Recording permission for **MSI Xpander**,
+Desktop sessions need Screen Recording permission for **MSI Xpander**,
 the responsible menu app. The permission menu opens the system privacy pane;
 only the user changes that permission. Remote Kiosk and the native clock saver have no screen-capture requirement.
 

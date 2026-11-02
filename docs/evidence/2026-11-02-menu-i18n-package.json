@@ -1,0 +1,54 @@
+{
+  "recorded_at": "2026-11-02T09:55:03.163132+08:00",
+  "installed_version": "1.0.4",
+  "build": "7",
+  "signature_deep_strict_exit": 0,
+  "status": {
+    "ok": true,
+    "mode": "kiosk",
+    "selected_mode": "kiosk",
+    "following_mac": false,
+    "system_state": {
+      "screensaver": false,
+      "screen_sleep": false,
+      "system_sleep": false
+    },
+    "desktop_fps": 60,
+    "desktop_quality": 1.0,
+    "kiosk_quality": 1.0,
+    "test_window": false,
+    "last_error": "",
+    "launch_at_login": true,
+    "logs_path": "/Users/chenyuhsieh/Library/Logs/digiter-xpander-kiosk",
+    "configured": true
+  },
+  "tests": 34,
+  "packages": {
+    "MSI-Xpander-1.0.4-arm64.dmg": {
+      "bytes": 15738314,
+      "sha256": "7a7e4121074b1ddbc27a22d0ade996a0dfcd51d4ccb62d4c25cd12e694cf7336"
+    },
+    "MSI-Xpander-1.0.4-arm64.zip": {
+      "bytes": 14749484,
+      "sha256": "74e350321f4ffb21d915ec01c202bef9d44719fcf53a521738c0f204987e4bdd"
+    }
+  },
+  "manual_validation_scope": "Real NSMenu catalogs/hierarchy dumped in both languages, with no status item or mode changes; frozen controller errors validated with isolated HOME. No real Mac sleep or screen saver triggered for this task.",
+  "mode_contract": [
+    "Kiosk",
+    "Extended Desktop",
+    "Screen Saver",
+    "Screen Off"
+  ],
+  "menu_groups": [
+    "Display",
+    "Settings",
+    "Tools"
+  ],
+  "supported_languages": [
+    "en",
+    "zh-Hant"
+  ],
+  "known_issue": "https://github.com/zenhsieh/msi-xpander-driver/issues/1",
+  "distribution": "Local certificate signed; Developer ID notarization not performed."
+}

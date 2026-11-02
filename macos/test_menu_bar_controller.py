@@ -4,6 +4,8 @@ import importlib.util
 import json
 from pathlib import Path
 import tempfile
+import sys
+sys.path.insert(0, str(Path(__file__).parent))
 import unittest
 from unittest.mock import Mock, patch
 
@@ -102,20 +104,22 @@ class ControllerTests(unittest.TestCase):
             c.main(["resume"])
         start.assert_called_once_with("screensaver", remember=False)
 
-    def test_widget_kiosk_uses_real_desktop_and_its_own_purpose(self):
-        c.write_json(c.PREFS, {"test_window": True})
+    def test_legacy_widget_layout_is_preserved_in_extended_desktop(self):
+        config = c.read_json(c.CONFIG, {}); config["desktop_purpose"] = "widgets"
+        c.write_json(c.CONFIG, config)
+        c.write_json(c.PREFS, {"desktop_quality": 0.9})
         process = Mock(pid=43210); process.poll.return_value = None
         def spawn(argv, **kwargs):
             self.assertEqual(argv[-1], str(self.helper))
             self.assertEqual(kwargs["env"]["MSI_DESKTOP_PURPOSE"], "widgets")
             self.assertEqual(kwargs["env"]["MSI_DESKTOP_TEST_WINDOW"], "0")
-            self.assertEqual(kwargs["env"]["MSI_VT_QUALITY"], "1.0")
+            self.assertEqual(kwargs["env"]["MSI_VT_QUALITY"], "0.9")
             kwargs["stdout"].write(b"Live desktop: 1 frames\n"); kwargs["stdout"].flush()
             return process
         with patch.object(c, "stop_desktop"), patch.object(c, "stop_kiosk"), \
              patch.object(c.subprocess, "Popen", side_effect=spawn), \
              patch.object(c, "process_identity", return_value="real widgets capture"):
-            c.start_desktop("native-kiosk")
+            c.start_desktop()
 
     def system_fixture(self, selected="kiosk", actual="kiosk"):
         self.actual = actual
@@ -179,11 +183,11 @@ class ControllerTests(unittest.TestCase):
     def test_selection_while_asleep_is_deferred_until_wake(self):
         self.system_fixture()
         self.system(screen=True)
-        c.main(["native-kiosk"])
+        c.main(["desktop"])
         c.start_desktop.assert_not_called()
-        self.assertEqual(c.read_json(c.STATE, {})["resume_mode"], "native-kiosk")
+        self.assertEqual(c.read_json(c.STATE, {})["resume_mode"], "desktop")
         self.system()
-        c.start_desktop.assert_called_once_with("native-kiosk", remember=False)
+        c.start_desktop.assert_called_once_with(remember=False)
 
     def test_failed_automatic_start_does_not_replace_selection(self):
         self.system_fixture()
@@ -234,6 +238,39 @@ class ControllerTests(unittest.TestCase):
                         '{"screensaver":1,"screen_sleep":false,"system_sleep":false}', "invalid"):
             with self.assertRaises(RuntimeError): c.set_system_state(payload)
         self.assertFalse(c.STATE.exists())
+
+    def test_legacy_native_kiosk_becomes_desktop_without_restarting(self):
+        c.write_json(c.STATE, {"resume_mode": "native-kiosk", "producer_mode": "native-kiosk",
+                                "mode": "native-kiosk"})
+        original = c.read_json(c.CONFIG, {})
+        with patch.object(c, "status", return_value={"mode": "desktop"}), \
+             patch.object(c, "start_desktop") as start, patch.object(c, "stop_desktop") as stop:
+            c.main(["resume"])
+        state = c.read_json(c.STATE, {})
+        self.assertEqual(state["resume_mode"], "desktop")
+        self.assertEqual(state["producer_mode"], "desktop")
+        self.assertEqual(c.read_json(c.CONFIG, {})["frame_cmd"], original["frame_cmd"])
+        self.assertEqual(c.read_json(c.CONFIG, {})["desktop_purpose"], "widgets")
+        start.assert_not_called(); stop.assert_not_called()
+
+    def test_status_normalizes_legacy_mode_without_writing_state(self):
+        legacy = {"resume_mode": "native-kiosk", "producer_mode": "native-kiosk"}
+        c.write_json(c.STATE, legacy)
+        with patch.object(c, "desktop_alive", return_value=True), patch.object(c, "service_info", return_value=None):
+            state = c.status()
+        self.assertEqual(state["mode"], "desktop")
+        self.assertEqual(state["selected_mode"], "desktop")
+        self.assertEqual(c.read_json(c.STATE, {}), legacy)
+
+    def test_persisted_error_is_localized_without_changing_saved_state(self):
+        message = "正在切換模式，請稍候。"
+        c.write_json(c.STATE, {"last_error": message})
+        with patch.object(c, "desktop_alive", return_value=False), patch.object(c, "service_info", return_value=None):
+            with patch.dict(c.os.environ, {"MSI_UI_LANGUAGE": "en"}):
+                self.assertEqual(c.status()["last_error"], "A mode change is in progress. Please wait.")
+            with patch.dict(c.os.environ, {"MSI_UI_LANGUAGE": "zh-Hant"}):
+                self.assertEqual(c.status()["last_error"], message)
+        self.assertEqual(c.read_json(c.STATE, {})["last_error"], message)
 
     def test_invalid_preferences_have_no_side_effect(self):
         for action, value in (("set-desktop-fps", "120"), ("set-desktop-quality", "NaN"),

@@ -31,7 +31,10 @@ static NSColor *rgb(CGFloat r,CGFloat g,CGFloat b) {
 - (void)drawRect:(NSRect)rect {
     (void)rect;
     [[NSColor blackColor] setFill]; NSRectFill(self.bounds);
-    NSDateFormatter *format=[NSDateFormatter new]; format.dateFormat=@"HH:mm:ss";
+    NSDateFormatter *format=[NSDateFormatter new];
+    NSString *language=NSProcessInfo.processInfo.environment[@"MSI_UI_LANGUAGE"];
+    if(language)format.locale=[NSLocale localeWithLocaleIdentifier:[language hasPrefix:@"zh"]?@"zh_TW":@"en_US"];
+    format.dateFormat=@"HH:mm:ss";
     CGFloat x=140+110*(1+sin(self.phase/37)),y=210+85*(1+cos(self.phase/43));
     text([format stringFromDate:NSDate.date],NSMakeRect(x,y,1450,180),
          [NSFont monospacedDigitSystemFontOfSize:160 weight:NSFontWeightLight],rgb(.88,.94,1));
@@ -49,7 +52,10 @@ static void dashboard(void) {
     [rgb(.025,.035,.05) setFill]; NSRectFill(NSMakeRect(0,0,1920,720));
     card(NSMakeRect(40,40,1120,640)); card(NSMakeRect(1190,40,690,640));
     NSDate *date=NSDate.date;
-    NSDateFormatter *format=[NSDateFormatter new]; format.dateFormat=@"HH:mm:ss";
+    NSDateFormatter *format=[NSDateFormatter new];
+    NSString *language=NSProcessInfo.processInfo.environment[@"MSI_UI_LANGUAGE"];
+    if(language)format.locale=[NSLocale localeWithLocaleIdentifier:[language hasPrefix:@"zh"]?@"zh_TW":@"en_US"];
+    format.dateFormat=@"HH:mm:ss";
     text([format stringFromDate:date],NSMakeRect(90,418,1030,190),
          [NSFont monospacedDigitSystemFontOfSize:154 weight:NSFontWeightLight],rgb(.94,.96,1));
     format.dateStyle=NSDateFormatterFullStyle; format.timeStyle=NSDateFormatterNoStyle;

@@ -2,8 +2,24 @@
 #import <CoreGraphics/CoreGraphics.h>
 #include <math.h>
 
+static BOOL MenuInspectionMode;
+
+static NSString *InterfaceLanguage(void) {
+    NSString *choice=[NSUserDefaults.standardUserDefaults stringForKey:@"MSIInterfaceLanguage"];
+    if ([choice isEqual:@"en"] || [choice isEqual:@"zh-Hant"]) return choice;
+    NSString *preferred=[NSBundle preferredLocalizationsFromArray:@[@"en",@"zh-Hant"]
+                                                 forPreferences:NSLocale.preferredLanguages].firstObject;
+    return [preferred isEqual:@"zh-Hant"] ? @"zh-Hant" : @"en";
+}
+static NSString *L(NSString *key) {
+    NSString *path=[NSBundle.mainBundle pathForResource:InterfaceLanguage() ofType:@"lproj"];
+    NSBundle *bundle=path?[NSBundle bundleWithPath:path]:NSBundle.mainBundle;
+    return [bundle localizedStringForKey:key value:key table:nil];
+}
+
 @interface XpanderMenuController : NSObject <NSApplicationDelegate, NSMenuDelegate>
 @property(nonatomic, strong) NSStatusItem *statusItem;
+@property(nonatomic, strong) NSMenu *rootMenu;
 @property(nonatomic, strong) NSMenuItem *statusHeader;
 @property(nonatomic, strong) NSMenuItem *errorHeader;
 @property(nonatomic, strong) NSMenuItem *loginItem;
@@ -46,25 +62,23 @@
 
 - (NSString *)modeTitle {
     NSString *mode=[self stringForKey:@"mode"];
-    if ([mode isEqualToString:@"kiosk"]) return @"遠端 Kiosk";
-    if ([mode isEqualToString:@"desktop"]) return @"延伸桌面";
-    if ([mode isEqualToString:@"native-kiosk"]) return @"原生 Kiosk";
-    if ([mode isEqualToString:@"screensaver"]) return @"螢幕保護模式";
-    if ([mode isEqualToString:@"stopped"]) return @"關閉螢幕";
-    return @"讀取狀態中…";
+    if ([mode isEqualToString:@"kiosk"]) return @"Kiosk";
+    if ([mode isEqualToString:@"desktop"]) return L(@"Extended Desktop");
+    if ([mode isEqualToString:@"screensaver"]) return L(@"Screen Saver");
+    if ([mode isEqualToString:@"stopped"]) return L(@"Screen Off");
+    return L(@"Reading status…");
 }
 
 - (NSString *)operationTitle {
-    if (self.terminationPending) return @"正在停止輸出並結束…";
-    if ([self.currentAction isEqualToString:@"resume"]) return @"正在恢復上次模式…";
-    if ([self.currentAction isEqualToString:@"kiosk"]) return @"正在啟動 Kiosk…";
-    if ([self.currentAction isEqualToString:@"desktop"]) return @"正在啟動延伸桌面…";
-    if ([self.currentAction isEqualToString:@"native-kiosk"]) return @"正在啟動 macOS 小工具桌面…";
-    if ([self.currentAction isEqualToString:@"screensaver"]) return @"正在啟動螢幕保護…";
-    if ([self.currentAction isEqualToString:@"stop"]) return @"正在停止輸出…";
-    if ([self.currentAction isEqualToString:@"restart"]) return @"正在重新啟動輸出…";
-    if ([self.currentAction isEqualToString:@"system-state"]) return @"正在同步 Mac 顯示狀態…";
-    return @"正在套用設定…";
+    if (self.terminationPending) return L(@"Stopping output and quitting…");
+    if ([self.currentAction isEqualToString:@"resume"]) return L(@"Restoring the selected mode…");
+    if ([self.currentAction isEqualToString:@"kiosk"]) return L(@"Starting Kiosk…");
+    if ([self.currentAction isEqualToString:@"desktop"]) return L(@"Starting extended desktop…");
+    if ([self.currentAction isEqualToString:@"screensaver"]) return L(@"Starting screen saver…");
+    if ([self.currentAction isEqualToString:@"stop"]) return L(@"Stopping output…");
+    if ([self.currentAction isEqualToString:@"restart"]) return L(@"Restarting output…");
+    if ([self.currentAction isEqualToString:@"system-state"]) return L(@"Following Mac display state…");
+    return L(@"Applying settings…");
 }
 
 - (NSMenuItem *)actionItem:(NSString *)title action:(NSString *)action value:(NSString *)value {
@@ -82,7 +96,7 @@
     submenu.autoenablesItems=NO;
     for (NSString *value in values) {
         NSString *itemTitle=[value stringByAppendingString:suffix];
-        if ([action isEqualToString:@"set-desktop-fps"]) itemTitle=[@"每秒 " stringByAppendingString:itemTitle];
+        if ([action isEqualToString:@"set-desktop-fps"]) itemTitle=[NSString stringWithFormat:L(@"%@ updates per second"),value];
         NSMenuItem *item=[self actionItem:itemTitle action:action value:value];
         items[value]=item;
         [submenu addItem:item];
@@ -97,13 +111,24 @@
     dispatch_queue_attr_t attributes=dispatch_queue_attr_make_with_autorelease_frequency(
         DISPATCH_QUEUE_SERIAL,DISPATCH_AUTORELEASE_FREQUENCY_WORK_ITEM);
     self.commands=dispatch_queue_create("com.digiter.xpander.menu.commands",attributes);
+    self.state=@{};
+    [self buildMenu];
+    [self observeMacDisplayState];
+    [self flushSystemState];
+    self.pollTimer=[NSTimer timerWithTimeInterval:2 repeats:YES block:^(NSTimer *timer) {
+        (void)timer;
+        [self requestStatus];
+    }];
+    [NSRunLoop.mainRunLoop addTimer:self.pollTimer forMode:NSRunLoopCommonModes];
+}
+
+- (void)buildMenu {
     self.controlItems=[NSMutableArray array];
     self.modeItems=[NSMutableDictionary dictionary];
     self.fpsItems=[NSMutableDictionary dictionary];
     self.desktopQualityItems=[NSMutableDictionary dictionary];
     self.kioskQualityItems=[NSMutableDictionary dictionary];
-    self.state=@{};
-    self.statusItem=[NSStatusBar.systemStatusBar statusItemWithLength:NSVariableStatusItemLength];
+    if (!MenuInspectionMode && !self.statusItem) self.statusItem=[NSStatusBar.systemStatusBar statusItemWithLength:NSVariableStatusItemLength];
     NSStatusBarButton *button=self.statusItem.button;
     NSImage *icon=[NSImage imageWithSystemSymbolName:@"display" accessibilityDescription:@"MSI Xpander"];
     if (!icon) icon=[NSImage imageNamed:NSImageNameComputer];
@@ -116,7 +141,7 @@
     NSMenu *menu=[[NSMenu alloc] initWithTitle:@"MSI Xpander"];
     menu.autoenablesItems=NO;
     menu.delegate=self;
-    self.statusHeader=[[NSMenuItem alloc] initWithTitle:@"讀取狀態中…" action:nil keyEquivalent:@""];
+    self.statusHeader=[[NSMenuItem alloc] initWithTitle:L(@"Reading status…") action:nil keyEquivalent:@""];
     self.statusHeader.enabled=NO;
     [menu addItem:self.statusHeader];
     self.errorHeader=[[NSMenuItem alloc] initWithTitle:@"" action:nil keyEquivalent:@""];
@@ -125,72 +150,91 @@
     [menu addItem:self.errorHeader];
     [menu addItem:NSMenuItem.separatorItem];
 
-    NSMenuItem *displayParent=[[NSMenuItem alloc] initWithTitle:@"顯示" action:nil keyEquivalent:@""];
-    NSMenu *displayMenu=[[NSMenu alloc] initWithTitle:@"顯示"];
+    NSMenuItem *displayParent=[[NSMenuItem alloc] initWithTitle:L(@"Display") action:nil keyEquivalent:@""];
+    NSMenu *displayMenu=[[NSMenu alloc] initWithTitle:L(@"Display")];
     displayMenu.autoenablesItems=NO;
-    NSArray *modes=@[@[@"kiosk",@"遠端 Kiosk"],@[@"desktop",@"延伸桌面"],@[@"native-kiosk",@"原生 Kiosk"],@[@"screensaver",@"螢幕保護模式"],@[@"stop",@"關閉螢幕"]];
+    NSArray *modes=@[@[@"kiosk",@"Kiosk"],@[@"desktop",L(@"Extended Desktop")],@[@"screensaver",L(@"Screen Saver")],@[@"stop",L(@"Screen Off")]];
     for (NSArray<NSString *> *mode in modes) {
         NSMenuItem *item=[self actionItem:mode[1] action:mode[0] value:nil];
         NSImage *radio=[NSImage imageWithSystemSymbolName:@"circle.fill" accessibilityDescription:nil];
         radio.size=NSMakeSize(8,8); radio.template=YES;
         item.onStateImage=radio;
         self.modeItems[[mode[0] isEqualToString:@"stop"] ? @"stopped" : mode[0]]=item;
-        if ([mode[0] isEqualToString:@"native-kiosk"]) item.toolTip=@"真正的 macOS 小工具桌面，可移入滑鼠互動。";
-        if ([mode[0] isEqualToString:@"stop"]) item.toolTip=@"送出黑畫面並停止更新；面板仍由 USB 供電。";
+        if ([mode[0] isEqualToString:@"stop"]) item.toolTip=L(@"Show black and stop updating. The panel remains powered by USB.");
         [displayMenu addItem:item];
     }
     displayParent.submenu=displayMenu;
     [self.controlItems addObject:displayParent];
     [menu addItem:displayParent];
-    [menu addItem:NSMenuItem.separatorItem];
-    [menu addItem:[self settingsMenu:@"桌面更新頻率" action:@"set-desktop-fps" values:@[@"30",@"60"] items:self.fpsItems suffix:@" 次"]];
-    [menu addItem:[self settingsMenu:@"桌面畫質" action:@"set-desktop-quality" values:@[@"0.75",@"0.9",@"1.0"] items:self.desktopQualityItems suffix:@""]];
-    [menu addItem:[self settingsMenu:@"Kiosk 畫質" action:@"set-kiosk-quality" values:@[@"0.75",@"0.9",@"1.0"] items:self.kioskQualityItems suffix:@""]];
-    NSMenuItem *sourceItem=[[NSMenuItem alloc] initWithTitle:@"設定 Kiosk 來源…" action:@selector(configureKioskSource:) keyEquivalent:@""];
+    NSMenuItem *settingsParent=[[NSMenuItem alloc] initWithTitle:L(@"Settings") action:nil keyEquivalent:@""];
+    NSMenu *settings=[[NSMenu alloc] initWithTitle:L(@"Settings")];settings.autoenablesItems=NO;
+    settingsParent.submenu=settings;[menu addItem:settingsParent];[self.controlItems addObject:settingsParent];
+    NSMenuItem *toolsParent=[[NSMenuItem alloc] initWithTitle:L(@"Tools") action:nil keyEquivalent:@""];
+    NSMenu *tools=[[NSMenu alloc] initWithTitle:L(@"Tools")];tools.autoenablesItems=NO;
+    toolsParent.submenu=tools;[menu addItem:toolsParent];[self.controlItems addObject:toolsParent];
+    [settings addItem:[self settingsMenu:L(@"Desktop Update Rate") action:@"set-desktop-fps" values:@[@"30",@"60"] items:self.fpsItems suffix:@""]];
+    [settings addItem:[self settingsMenu:L(@"Desktop Quality") action:@"set-desktop-quality" values:@[@"0.75",@"0.9",@"1.0"] items:self.desktopQualityItems suffix:@""]];
+    [settings addItem:[self settingsMenu:L(@"Kiosk Quality") action:@"set-kiosk-quality" values:@[@"0.75",@"0.9",@"1.0"] items:self.kioskQualityItems suffix:@""]];
+    NSMenuItem *sourceItem=[[NSMenuItem alloc] initWithTitle:L(@"Configure Kiosk Source…") action:@selector(configureKioskSource:) keyEquivalent:@""];
     sourceItem.target=self;
     [self.controlItems addObject:sourceItem];
-    [menu addItem:sourceItem];
-    NSMenuItem *widgetsHelp=[[NSMenuItem alloc] initWithTitle:@"設定原生 Kiosk 小工具…" action:@selector(showWidgetsHelp:) keyEquivalent:@""];
+    [settings addItem:sourceItem];
+    NSMenuItem *widgetsHelp=[[NSMenuItem alloc] initWithTitle:L(@"Use Widgets on the Desktop…") action:@selector(showWidgetsHelp:) keyEquivalent:@""];
     widgetsHelp.target=self;
-    [self.controlItems addObject:widgetsHelp];[menu addItem:widgetsHelp];
-    NSMenuItem *testOptions=[[NSMenuItem alloc] initWithTitle:@"測試選項" action:nil keyEquivalent:@""];
-    NSMenu *testMenu=[[NSMenu alloc] initWithTitle:@"測試選項"];
+    [self.controlItems addObject:widgetsHelp];[tools addItem:widgetsHelp];
+    NSMenuItem *testOptions=[[NSMenuItem alloc] initWithTitle:L(@"Testing") action:nil keyEquivalent:@""];
+    NSMenu *testMenu=[[NSMenu alloc] initWithTitle:L(@"Testing")];
     testMenu.autoenablesItems=NO;
-    self.testWindowItem=[self actionItem:@"顯示測試視窗" action:@"set-test-window" value:nil];
+    self.testWindowItem=[self actionItem:L(@"Show Test Window") action:@"set-test-window" value:nil];
     [testMenu addItem:self.testWindowItem];
     testOptions.submenu=testMenu;
     [self.controlItems addObject:testOptions];
-    [menu addItem:testOptions];
-    [menu addItem:[self actionItem:@"重新啟動輸出" action:@"restart" value:nil]];
-    [menu addItem:NSMenuItem.separatorItem];
-    NSMenuItem *permissionItem=[[NSMenuItem alloc] initWithTitle:@"螢幕錄製權限…" action:@selector(requestScreenRecordingPermission:) keyEquivalent:@""];
+    [tools addItem:testOptions];
+    [tools addItem:[self actionItem:L(@"Restart Output") action:@"restart" value:nil]];
+    [tools addItem:NSMenuItem.separatorItem];
+    NSMenuItem *permissionItem=[[NSMenuItem alloc] initWithTitle:L(@"Screen Recording Permission…") action:@selector(requestScreenRecordingPermission:) keyEquivalent:@""];
     permissionItem.target=self;
     [self.controlItems addObject:permissionItem];
-    [menu addItem:permissionItem];
-    self.logsItem=[[NSMenuItem alloc] initWithTitle:@"開啟日誌" action:@selector(openLogs:) keyEquivalent:@""];
+    [tools addItem:permissionItem];
+    self.logsItem=[[NSMenuItem alloc] initWithTitle:L(@"Open Logs") action:@selector(openLogs:) keyEquivalent:@""];
     self.logsItem.target=self;
-    [menu addItem:self.logsItem];
-    self.loginItem=[self actionItem:@"登入時開啟" action:@"set-login" value:nil];
-    [menu addItem:self.loginItem];
+    [tools addItem:self.logsItem];
+    self.loginItem=[self actionItem:L(@"Open at Login") action:@"set-login" value:nil];
+    [settings addItem:self.loginItem];
+    NSMenuItem *languageParent=[[NSMenuItem alloc] initWithTitle:L(@"Language") action:nil keyEquivalent:@""];
+    NSMenu *languages=[[NSMenu alloc] initWithTitle:L(@"Language")];languages.autoenablesItems=NO;
+    NSString *choice=[NSUserDefaults.standardUserDefaults stringForKey:@"MSIInterfaceLanguage"] ?: @"system";
+    for (NSArray<NSString *> *row in @[@[@"system",L(@"Follow System")],@[@"zh-Hant",L(@"Traditional Chinese")],@[@"en",L(@"English")]]) {
+        NSMenuItem *item=[[NSMenuItem alloc] initWithTitle:row[1] action:@selector(chooseLanguage:) keyEquivalent:@""];
+        item.target=self;item.representedObject=row[0];item.state=[choice isEqual:row[0]]?NSControlStateValueOn:NSControlStateValueOff;
+        [languages addItem:item];[self.controlItems addObject:item];
+    }
+    languageParent.submenu=languages;[settings addItem:languageParent];[self.controlItems addObject:languageParent];
     [menu addItem:NSMenuItem.separatorItem];
-    self.quitItem=[[NSMenuItem alloc] initWithTitle:@"結束並停止輸出" action:@selector(quitAndStop:) keyEquivalent:@"q"];
+    self.quitItem=[[NSMenuItem alloc] initWithTitle:L(@"Quit and Stop Output") action:@selector(quitAndStop:) keyEquivalent:@"q"];
     self.quitItem.target=self;
     [menu addItem:self.quitItem];
+    self.rootMenu=menu;
     self.statusItem.menu=menu;
     [self refreshMenu];
-    [self observeMacDisplayState];
-    [self flushSystemState];
-    self.pollTimer=[NSTimer timerWithTimeInterval:2 repeats:YES block:^(NSTimer *timer) {
-        (void)timer;
-        [self requestStatus];
-    }];
-    [NSRunLoop.mainRunLoop addTimer:self.pollTimer forMode:NSRunLoopCommonModes];
+}
+
+- (void)chooseLanguage:(NSMenuItem *)sender {
+    if (self.busy || self.terminationPending) return;
+    NSString *choice=sender.representedObject;
+    if (![@[@"system",@"en",@"zh-Hant"] containsObject:choice]) return;
+    [NSUserDefaults.standardUserDefaults setObject:choice forKey:@"MSIInterfaceLanguage"];
+    self.commandGeneration++;
+    NSMutableDictionary *state=[self.state mutableCopy];[state removeObjectForKey:@"last_error"];self.state=state;
+    [self buildMenu];
+    if ([[self stringForKey:@"mode"] isEqual:@"screensaver"]) [self runAction:@"restart" value:nil terminating:NO];
+    else [self requestStatus];
 }
 
 - (void)refreshMenu {
     BOOL transition=self.terminationPending || self.busy;
-    NSString *title=transition ? [self operationTitle] : [NSString stringWithFormat:@"目前模式：%@",[self modeTitle]];
-    if (!transition && [self.state[@"following_mac"] boolValue]) title=[title stringByAppendingString:@"（跟隨 Mac）"];
+    NSString *title=transition ? [self operationTitle] : [NSString stringWithFormat:L(@"Current mode: %@"),[self modeTitle]];
+    if (!transition && [self.state[@"following_mac"] boolValue]) title=[title stringByAppendingString:L(@" (Following Mac)")];
     self.statusHeader.title=title;
     self.statusItem.button.toolTip=[NSString stringWithFormat:@"MSI Xpander — %@",title];
     BOOL enabled=!self.busy && !self.terminationPending;
@@ -234,9 +278,9 @@
 - (void)showError:(NSString *)message {
     NSAlert *alert=[NSAlert new];
     alert.alertStyle=NSAlertStyleWarning;
-    alert.messageText=@"無法完成操作";
-    alert.informativeText=message.length ? message : @"請稍後再試，或開啟日誌查看狀態。";
-    [alert addButtonWithTitle:@"好"];
+    alert.messageText=L(@"Unable to Complete Action");
+    alert.informativeText=message.length ? message : L(@"Try again later, or open the logs for details.");
+    [alert addButtonWithTitle:L(@"OK")];
     [NSApp activateIgnoringOtherApps:YES];
     [alert runModal];
 }
@@ -249,22 +293,22 @@
     CGRequestScreenCaptureAccess();
     NSURL *settings=[NSURL URLWithString:@"x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture"];
     if (![NSWorkspace.sharedWorkspace openURL:settings])
-        [self showError:@"請開啟「系統設定 → 隱私權與安全性 → 螢幕與系統音訊錄製」，為「MSI Xpander」開啟權限。"];
+        [self showError:L(@"Open System Settings → Privacy & Security → Screen & System Audio Recording and allow MSI Xpander.")];
 }
 
 - (void)showControllerError:(NSString *)message action:(NSString *)action {
-    BOOL desktopRequest=[action isEqualToString:@"desktop"] || [action isEqualToString:@"native-kiosk"] || [action isEqualToString:@"resume"];
-    BOOL permissionError=message.length && [message rangeOfString:@"螢幕錄製"].location!=NSNotFound;
+    BOOL desktopRequest=[action isEqualToString:@"desktop"] || [action isEqualToString:@"resume"];
+    BOOL permissionError=message.length && ([message rangeOfString:L(@"Screen Recording") options:NSCaseInsensitiveSearch].location!=NSNotFound || [message rangeOfString:@"螢幕錄製"].location!=NSNotFound);
     if (!desktopRequest || !permissionError) {
         [self showError:message];
         return;
     }
     NSAlert *alert=[NSAlert new];
     alert.alertStyle=NSAlertStyleWarning;
-    alert.messageText=@"需要 MSI Xpander 的螢幕錄製權限";
-    alert.informativeText=[NSString stringWithFormat:@"請在「系統設定 → 隱私權與安全性 → 螢幕與系統音訊錄製」允許主程式「MSI Xpander」。若舊項目已開啟卻仍失敗，請移除舊項目，再按「＋」加入目前的 MSI Xpander.app 並開啟權限。完成後結束並重新開啟 MSI Xpander。\n\n目前 App：%@",NSBundle.mainBundle.bundlePath.stringByAbbreviatingWithTildeInPath];
-    [alert addButtonWithTitle:@"開啟設定"];
-    [alert addButtonWithTitle:@"稍後"];
+    alert.messageText=L(@"MSI Xpander Needs Screen Recording Permission");
+    alert.informativeText=[NSString stringWithFormat:L(@"Allow MSI Xpander in System Settings → Privacy & Security → Screen & System Audio Recording. If an old enabled entry still fails, remove it, click + to add the current MSI Xpander.app, and allow it. Then quit and reopen MSI Xpander.\n\nCurrent app: %@"),NSBundle.mainBundle.bundlePath.stringByAbbreviatingWithTildeInPath];
+    [alert addButtonWithTitle:L(@"Open Settings")];
+    [alert addButtonWithTitle:L(@"Later")];
     [NSApp activateIgnoringOtherApps:YES];
     if ([alert runModal]==NSAlertFirstButtonReturn) [self requestScreenRecordingPermission:nil];
 }
@@ -273,15 +317,15 @@
     (void)sender;
     if (self.busy || self.terminationPending) return;
     NSAlert *alert=[NSAlert new];
-    alert.messageText=@"設定 Kiosk 來源";
-    alert.informativeText=@"輸入可產生 1920×720 PNG 的指令。儲存後，選擇「Kiosk」才會開始輸出。";
-    [alert addButtonWithTitle:@"儲存"];
-    [alert addButtonWithTitle:@"取消"];
+    alert.messageText=L(@"Configure Kiosk Source");
+    alert.informativeText=L(@"Enter a command that writes a 1920×720 PNG. After saving, choose Kiosk to start output.");
+    [alert addButtonWithTitle:L(@"Save")];
+    [alert addButtonWithTitle:L(@"Cancel")];
     NSTextField *input=[[NSTextField alloc] initWithFrame:NSMakeRect(0,0,480,26)];
     input.stringValue=[self stringForKey:@"source_cmd"];
-    input.placeholderString=@"例如：ssh my-host ~/bin/render-dashboard";
+    input.placeholderString=L(@"Example: ssh my-host ~/bin/render-dashboard");
     input.font=[NSFont monospacedSystemFontOfSize:12 weight:NSFontWeightRegular];
-    input.accessibilityLabel=@"Kiosk 來源指令";
+    input.accessibilityLabel=L(@"Kiosk source command");
     alert.accessoryView=input;
     [NSApp activateIgnoringOtherApps:YES];
     for (;;) {
@@ -291,7 +335,7 @@
         if ([alert runModal]!=NSAlertFirstButtonReturn) return;
         NSString *command=[input.stringValue stringByTrimmingCharactersInSet:NSCharacterSet.whitespaceAndNewlineCharacterSet];
         if (!command.length) {
-            [self showError:@"請輸入 Kiosk 畫面來源指令。"];
+            [self showError:L(@"Enter a Kiosk frame source command.")];
             continue;
         }
         [self runAction:@"set-frame-cmd" value:command terminating:NO];
@@ -302,9 +346,9 @@
 - (void)showWidgetsHelp:(id)sender {
     (void)sender;
     NSAlert *alert=[NSAlert new];
-    alert.messageText=@"設定 macOS 小工具桌面";
-    alert.informativeText=@"先從「顯示 → 原生 Kiosk」開啟小工具桌面，再把滑鼠移到 Xpander。於桌面按右鍵，選「編輯小工具」，加入時鐘、行事曆等小工具。小工具與位置由 macOS 管理；此模式使用真正的桌面，可以點擊與捲動。";
-    [alert addButtonWithTitle:@"了解"];
+    alert.messageText=L(@"Use macOS Desktop Widgets");
+    alert.informativeText=L(@"Choose Display → Extended Desktop, then move the pointer to Xpander. Right-click the desktop and choose Edit Widgets to add a clock, calendar, and other widgets. You can also place apps there and decide how to use the desktop. macOS manages widgets and their positions.");
+    [alert addButtonWithTitle:L(@"Got It")];
     [NSApp activateIgnoringOtherApps:YES];[alert runModal];
 }
 
@@ -391,17 +435,19 @@
             arguments=[@[script.path] arrayByAddingObjectsFromArray:arguments];
         }
         if (!executable) {
-            error=@"無法啟動面板控制服務，請重新開啟 MSI Xpander。";
+            error=L(@"Unable to start the panel controller. Reopen MSI Xpander.");
         } else {
             NSTask *task=[NSTask new];
             task.executableURL=executable;
             task.arguments=arguments;
+            NSMutableDictionary *environment=[NSProcessInfo.processInfo.environment mutableCopy];
+            environment[@"MSI_UI_LANGUAGE"]=InterfaceLanguage();task.environment=environment;
             NSPipe *output=[NSPipe pipe];
             task.standardOutput=output;
             task.standardError=NSFileHandle.fileHandleWithNullDevice;
             NSError *launchError=nil;
             if (![task launchAndReturnError:&launchError]) {
-                error=@"無法啟動面板控制服務，請稍後再試。";
+                error=L(@"Unable to start the panel controller. Try again later.");
             } else {
                 NSData *data=[output.fileHandleForReading readDataToEndOfFile];
                 [task waitUntilExit];
@@ -412,7 +458,7 @@
                 if (!ok) {
                     id detail=response[@"last_error"];
                     if (![detail isKindOfClass:NSString.class] || ![detail length]) detail=response[@"error"];
-                    error=[detail isKindOfClass:NSString.class] && [detail length] ? detail : @"無法讀取面板狀態，請稍後再試。";
+                    error=[detail isKindOfClass:NSString.class] && [detail length] ? detail : L(@"Unable to read panel status. Try again later.");
                 }
             }
         }
@@ -498,7 +544,7 @@
     (void)sender;
     NSString *path=[self stringForKey:@"logs_path"];
     if (path.length && ![NSWorkspace.sharedWorkspace openURL:[NSURL fileURLWithPath:path]])
-        [self showError:@"目前無法開啟日誌，請稍後再試。"];
+        [self showError:L(@"Unable to open logs. Try again later.")];
 }
 
 - (void)quitAndStop:(id)sender {
@@ -534,12 +580,36 @@
 
 static XpanderMenuController *menuController;
 
+static NSArray *MenuSnapshot(NSMenu *menu) {
+    NSMutableArray *items=[NSMutableArray array];
+    for(NSMenuItem *item in menu.itemArray) {
+        if(item.separatorItem || item.hidden) continue;
+        NSMutableDictionary *row=[@{@"title":item.title,@"checked":@(item.state==NSControlStateValueOn)} mutableCopy];
+        if(item.submenu)row[@"items"]=MenuSnapshot(item.submenu);
+        [items addObject:row];
+    }
+    return items;
+}
+
 int main(int argc,const char *argv[]) {
-    (void)argc; (void)argv;
     @autoreleasepool {
+        MenuInspectionMode=argc==3 && !strcmp(argv[1],"--dump-menu");
+        if(MenuInspectionMode) {
+            NSString *language=[NSString stringWithUTF8String:argv[2]];
+            if(![@[@"en",@"zh-Hant",@"system"] containsObject:language])return 2;
+            [NSUserDefaults.standardUserDefaults setVolatileDomain:@{@"MSIInterfaceLanguage":language} forName:NSArgumentDomain];
+        }
         NSApplication *app=NSApplication.sharedApplication;
-        [app setActivationPolicy:NSApplicationActivationPolicyAccessory];
+        [app setActivationPolicy:MenuInspectionMode?NSApplicationActivationPolicyProhibited:NSApplicationActivationPolicyAccessory];
         menuController=[XpanderMenuController new];
+        if(MenuInspectionMode) {
+            // Inspect real NSMenu titles without opening USB, capture, observers,
+            // timers or a status-bar item; no preference writes are performed.
+            menuController.state=@{@"mode":@"desktop",@"desktop_fps":@60,@"desktop_quality":@1.0,@"kiosk_quality":@1.0};
+            [menuController buildMenu];
+            NSData *data=[NSJSONSerialization dataWithJSONObject:@{@"language":InterfaceLanguage(),@"menu":MenuSnapshot(menuController.rootMenu)} options:NSJSONWritingPrettyPrinted error:NULL];
+            if(!data)return 2;fwrite(data.bytes,1,data.length,stdout);fputc('\n',stdout);return 0;
+        }
         app.delegate=menuController;
         [app run];
     }
