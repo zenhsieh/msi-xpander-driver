@@ -1,0 +1,319 @@
+{
+  "recorded_at": "2026-11-02T11:30:24.976696+08:00",
+  "version": "1.0.5",
+  "build": "8",
+  "signature_ok": true,
+  "installed_mode": "kiosk",
+  "indicator": "AppKit default checkmark; custom circle.fill onStateImage override removed.",
+  "menu_snapshots": {
+    "en": {
+      "menu": [
+        {
+          "title": "Mode: Desktop",
+          "checked": 0
+        },
+        {
+          "title": "Display",
+          "checked": 0,
+          "items": [
+            {
+              "title": "Kiosk",
+              "checked": 0
+            },
+            {
+              "title": "Desktop",
+              "checked": 1
+            },
+            {
+              "title": "Screen Saver",
+              "checked": 0
+            },
+            {
+              "title": "Off",
+              "checked": 0
+            }
+          ]
+        },
+        {
+          "title": "Settings",
+          "checked": 0,
+          "items": [
+            {
+              "title": "Update Rate",
+              "checked": 0,
+              "items": [
+                {
+                  "title": "30 Hz",
+                  "checked": 0
+                },
+                {
+                  "title": "60 Hz",
+                  "checked": 1
+                }
+              ]
+            },
+            {
+              "title": "Desktop Quality",
+              "checked": 0,
+              "items": [
+                {
+                  "title": "0.75",
+                  "checked": 0
+                },
+                {
+                  "title": "0.9",
+                  "checked": 0
+                },
+                {
+                  "title": "1.0",
+                  "checked": 1
+                }
+              ]
+            },
+            {
+              "title": "Kiosk Quality",
+              "checked": 0,
+              "items": [
+                {
+                  "title": "0.75",
+                  "checked": 0
+                },
+                {
+                  "title": "0.9",
+                  "checked": 0
+                },
+                {
+                  "title": "1.0",
+                  "checked": 1
+                }
+              ]
+            },
+            {
+              "title": "Kiosk Source…",
+              "checked": 0
+            },
+            {
+              "title": "Open at Login",
+              "checked": 0
+            },
+            {
+              "title": "Language",
+              "checked": 0,
+              "items": [
+                {
+                  "title": "System",
+                  "checked": 0
+                },
+                {
+                  "title": "Traditional Chinese",
+                  "checked": 0
+                },
+                {
+                  "title": "English",
+                  "checked": 1
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "title": "Tools",
+          "checked": 0,
+          "items": [
+            {
+              "title": "Desktop Widgets…",
+              "checked": 0
+            },
+            {
+              "title": "Tests",
+              "checked": 0,
+              "items": [
+                {
+                  "title": "Test Window",
+                  "checked": 0
+                }
+              ]
+            },
+            {
+              "title": "Restart",
+              "checked": 0
+            },
+            {
+              "title": "Screen Recording…",
+              "checked": 0
+            },
+            {
+              "title": "Logs",
+              "checked": 0
+            }
+          ]
+        },
+        {
+          "title": "Quit",
+          "checked": 0
+        }
+      ],
+      "language": "en"
+    },
+    "zh-Hant": {
+      "menu": [
+        {
+          "title": "目前：延伸桌面",
+          "checked": 0
+        },
+        {
+          "title": "顯示",
+          "checked": 0,
+          "items": [
+            {
+              "title": "Kiosk",
+              "checked": 0
+            },
+            {
+              "title": "延伸桌面",
+              "checked": 1
+            },
+            {
+              "title": "螢幕保護",
+              "checked": 0
+            },
+            {
+              "title": "關閉",
+              "checked": 0
+            }
+          ]
+        },
+        {
+          "title": "設定",
+          "checked": 0,
+          "items": [
+            {
+              "title": "更新頻率",
+              "checked": 0,
+              "items": [
+                {
+                  "title": "30 Hz",
+                  "checked": 0
+                },
+                {
+                  "title": "60 Hz",
+                  "checked": 1
+                }
+              ]
+            },
+            {
+              "title": "桌面畫質",
+              "checked": 0,
+              "items": [
+                {
+                  "title": "0.75",
+                  "checked": 0
+                },
+                {
+                  "title": "0.9",
+                  "checked": 0
+                },
+                {
+                  "title": "1.0",
+                  "checked": 1
+                }
+              ]
+            },
+            {
+              "title": "Kiosk 畫質",
+              "checked": 0,
+              "items": [
+                {
+                  "title": "0.75",
+                  "checked": 0
+                },
+                {
+                  "title": "0.9",
+                  "checked": 0
+                },
+                {
+                  "title": "1.0",
+                  "checked": 1
+                }
+              ]
+            },
+            {
+              "title": "Kiosk 來源…",
+              "checked": 0
+            },
+            {
+              "title": "登入時開啟",
+              "checked": 0
+            },
+            {
+              "title": "語言",
+              "checked": 0,
+              "items": [
+                {
+                  "title": "系統",
+                  "checked": 0
+                },
+                {
+                  "title": "繁體中文",
+                  "checked": 1
+                },
+                {
+                  "title": "English",
+                  "checked": 0
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "title": "工具",
+          "checked": 0,
+          "items": [
+            {
+              "title": "桌面小工具…",
+              "checked": 0
+            },
+            {
+              "title": "測試",
+              "checked": 0,
+              "items": [
+                {
+                  "title": "測試視窗",
+                  "checked": 0
+                }
+              ]
+            },
+            {
+              "title": "重新啟動",
+              "checked": 0
+            },
+            {
+              "title": "螢幕錄製…",
+              "checked": 0
+            },
+            {
+              "title": "日誌",
+              "checked": 0
+            }
+          ]
+        },
+        {
+          "title": "結束",
+          "checked": 0
+        }
+      ],
+      "language": "zh-Hant"
+    }
+  },
+  "localization_checks": "Existing 4 localization checks pass; actual English and Traditional Chinese rate items are 30 Hz / 60 Hz.",
+  "packages": {
+    "MSI-Xpander-1.0.5-arm64.zip": {
+      "bytes": 14750018,
+      "sha256": "2e1bb6e217b47a138fea2ead3d7b9264a9e87784436c365cb824080b00a3049f"
+    },
+    "MSI-Xpander-1.0.5-arm64.dmg": {
+      "bytes": 15735784,
+      "sha256": "02ae7c0e270589dccb398b13175975fac5cefbadaab140b46b155b0b8b0b7fa9"
+    }
+  }
+}

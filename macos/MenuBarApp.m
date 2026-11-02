@@ -156,9 +156,7 @@ static NSString *L(NSString *key) {
     NSArray *modes=@[@[@"kiosk",@"Kiosk"],@[@"desktop",L(@"Extended Desktop")],@[@"screensaver",L(@"Screen Saver")],@[@"stop",L(@"Screen Off")]];
     for (NSArray<NSString *> *mode in modes) {
         NSMenuItem *item=[self actionItem:mode[1] action:mode[0] value:nil];
-        NSImage *radio=[NSImage imageWithSystemSymbolName:@"circle.fill" accessibilityDescription:nil];
-        radio.size=NSMakeSize(8,8); radio.template=YES;
-        item.onStateImage=radio;
+        // Use AppKit's standard selection checkmark.
         self.modeItems[[mode[0] isEqualToString:@"stop"] ? @"stopped" : mode[0]]=item;
         if ([mode[0] isEqualToString:@"stop"]) item.toolTip=L(@"Show black and stop updating. The panel remains powered by USB.");
         [displayMenu addItem:item];
