@@ -34,7 +34,7 @@ if $prepare_only; then
 fi
 
 : "${MSI_SIGN_IDENTITY:?Set MSI_SIGN_IDENTITY to the identity used for the surrounding app}"
-for input in macos/menu_bar_controller.py macos/install_menu_bar.py kiosk/run_kiosk.py; do
+for input in macos/menu_bar_controller.py macos/controller_messages.py macos/install_menu_bar.py kiosk/run_kiosk.py; do
     [ -f "$input" ] || { echo "Missing controller input: $input" >&2; exit 1; }
 done
 
@@ -52,7 +52,7 @@ import platform
 from pathlib import Path
 import sys
 root, destination = map(Path, sys.argv[1:])
-sources = ["macos/menu_bar_controller.py", "macos/install_menu_bar.py",
+sources = ["macos/menu_bar_controller.py", "macos/controller_messages.py", "macos/install_menu_bar.py",
            "kiosk/run_kiosk.py", "macos/freeze_controller.sh", "macos/requirements-packaging.txt",
            "macos/controller-entitlements.plist"]
 destination.write_text(json.dumps({

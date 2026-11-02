@@ -22,13 +22,17 @@ exact validation status of each path.
 
 ## macOS menu-bar app and hardware JPEG
 
-The **顯示** submenu offers remote Kiosk, extended desktop, a real macOS widgets
-desktop, a native clock screensaver, and screen Off (black frame). Manual choices
-control only Xpander. Screen saver and screen/system sleep/wake events on the Mac
-automatically override and then restore the selected panel mode. A manually
-selected Off stays off after wake. Widget mode is interactive macOS desktop,
-not an AppKit picture of widgets; add widgets through macOS's Edit Widgets UI.
-See [installation, modes and packaging](macos/MENU-BAR.md).
+The **Display / 顯示** submenu offers Kiosk, Extended Desktop, Screen Saver,
+and Screen Off (black frame). Extended Desktop is an ordinary interactive macOS
+desktop: users choose whether to place apps or desktop widgets there and use it
+as a kiosk. The menu is grouped into Display, Settings and Tools. Settings →
+Language offers Follow System, Traditional Chinese and English; interface text
+and backend errors are localized, with live language switching.
+
+Manual choices control only Xpander. Mac screen saver and screen/system
+sleep/wake events temporarily override and then restore the selected panel mode.
+A manually selected Off stays off after wake. See
+[installation, modes and packaging](macos/MENU-BAR.md).
 
 The Mac app uses bulk USB and verified VideoToolbox hardware JPEG. The older
 command-line HID default remains for compatibility. Capture activity and USB

@@ -2,31 +2,38 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-    <key>CFBundleIdentifier</key>
-    <string>com.digiter.xpander.menu</string>
-    <key>CFBundleName</key>
-    <string>MSI Xpander</string>
-    <key>CFBundleDisplayName</key>
-    <string>MSI Xpander</string>
-    <key>CFBundleExecutable</key>
-    <string>MenuBarApp</string>
-    <key>CFBundlePackageType</key>
-    <string>APPL</string>
-    <key>CFBundleShortVersionString</key>
-    <string>1.0.3</string>
-    <key>CFBundleVersion</key>
-    <string>6</string>
-    <key>LSUIElement</key>
-    <true/>
-    <key>LSMinimumSystemVersion</key>
-    <string>26.0</string>
-    <key>LSMultipleInstancesProhibited</key>
-    <true/>
-    <key>NSPrincipalClass</key>
-    <string>NSApplication</string>
-    <key>NSHighResolutionCapable</key>
-    <true/>
-    <key>NSScreenCaptureUsageDescription</key>
-    <string>使用延伸桌面或原生 Kiosk 小工具桌面時擷取 MSI Xpander 虛擬顯示器，並將畫面傳送到面板。遠端 Kiosk 與原生時鐘螢幕保護不需要螢幕錄製權限。</string>
+	<key>CFBundleIdentifier</key>
+	<string>com.digiter.xpander.menu</string>
+	<key>CFBundleName</key>
+	<string>MSI Xpander</string>
+	<key>CFBundleDisplayName</key>
+	<string>MSI Xpander</string>
+	<key>CFBundleExecutable</key>
+	<string>MenuBarApp</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleShortVersionString</key>
+	<string>1.0.4</string>
+	<key>CFBundleVersion</key>
+	<string>7</string>
+	<key>LSUIElement</key>
+	<true/>
+	<key>LSMinimumSystemVersion</key>
+	<string>26.0</string>
+	<key>LSMultipleInstancesProhibited</key>
+	<true/>
+	<key>NSPrincipalClass</key>
+	<string>NSApplication</string>
+	<key>NSHighResolutionCapable</key>
+	<true/>
+	<key>NSScreenCaptureUsageDescription</key>
+	<string>Capture the MSI Xpander virtual display for Extended Desktop. Kiosk and the native clock screen saver do not require Screen Recording.</string>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>en</string>
+	<key>CFBundleLocalizations</key>
+	<array>
+		<string>en</string>
+		<string>zh-Hant</string>
+	</array>
 </dict>
 </plist>

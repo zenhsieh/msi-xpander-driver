@@ -18,6 +18,20 @@ Kiosk 不需要螢幕錄製權限；延伸桌面第一次使用時，
 可自行設定 Kiosk 的 PNG 來源指令；延伸桌面不需要來源指令。
 測試視窗預設關閉，可在「測試選項」啟用。
 EOF
+cat > "$staging/Read Me.txt" <<'EOF'
+Drag MSI Xpander to Applications, then open it.
+
+Display offers Kiosk, Extended Desktop, Screen Saver, and Screen Off.
+Use Extended Desktop for apps or macOS desktop widgets as you prefer.
+Settings contains the source, quality, update rate, language and login options.
+Tools contains permission help, logs and test options.
+
+Settings > Language: Follow System, Traditional Chinese, or English.
+Extended Desktop requires Screen Recording permission for MSI Xpander.
+Manual mode choices affect only the panel; it automatically follows Mac
+screen saver and screen/system sleep and wake.
+Screen Off sends black and stops updates; the panel remains USB powered.
+EOF
 version="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' 'dist/MSI Xpander.app/Contents/Info.plist')"
 image="$PWD/dist/MSI-Xpander-${version}-arm64.dmg"
 hdiutil create -volname 'MSI Xpander' -srcfolder "$staging" -ov -format UDZO "$image"

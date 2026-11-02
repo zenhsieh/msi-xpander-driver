@@ -17,6 +17,10 @@ xcrun clang -fobjc-arc -fblocks -O2 -Wall -Wextra -Werror -framework AppKit -fra
   macos/NativeKioskRenderer.m -o "$resources/bin/NativeKioskRenderer"
 codesign --force --sign "$identity" --timestamp=none --identifier com.digiter.xpander.native-kiosk "$resources/bin/NativeKioskRenderer"
 cp macos/menu_bar_controller.py "$resources/controller.py"
+cp macos/controller_messages.py "$resources/controller_messages.py"
+for language in en zh-Hant; do
+  ditto "macos/$language.lproj" "$resources/$language.lproj"
+done
 ditto target/frozen/XpanderController "$resources/controller"
 cp kiosk/run_kiosk.py "$resources/kiosk/"
 xcrun clang -fobjc-arc -fblocks -O2 -framework AppKit -framework CoreGraphics \

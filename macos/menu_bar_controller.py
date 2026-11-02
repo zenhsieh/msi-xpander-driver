@@ -11,6 +11,8 @@ import subprocess
 import sys
 import time
 
+from controller_messages import localize
+
 RESOURCES = (Path(sys.executable).resolve().parent.parent if getattr(sys, "frozen", False)
              else Path(__file__).resolve().parent)
 SUPPORT = Path.home() / "Library/Application Support/digiter-xpander-kiosk"
@@ -20,7 +22,7 @@ PREFS = SUPPORT / "menu-preferences.json"
 STATE = SUPPORT / "menu-state.json"
 LABEL = "com.digiter.xpander-kiosk"
 MENU_LABEL = "com.digiter.xpander-menu"
-MODES = ("kiosk", "desktop", "native-kiosk", "screensaver", "stopped")
+MODES = ("kiosk", "desktop", "screensaver", "stopped")
 SYSTEM_DEFAULTS = {"screensaver": False, "screen_sleep": False, "system_sleep": False}
 DEFAULTS = {"desktop_fps": 60, "desktop_quality": 0.75, "kiosk_quality": 1.0, "test_window": False}
 
@@ -68,6 +70,23 @@ def paths(config):
     return Path(config.get("resources_path", str(RESOURCES))) / "bin" / "msi-xpander"
 
 
+def canonical_mode(mode):
+    return "desktop" if mode == "native-kiosk" else mode
+
+
+def migrate_legacy_desktop():
+    state = read_json(STATE, {})
+    keys = ("resume_mode", "producer_mode", "mode")
+    if not any(state.get(key) == "native-kiosk" for key in keys):
+        return
+    # Preserve the identity/layout used by an older widgets desktop without
+    # exposing a separate display mode or forcing a running producer to restart.
+    config = read_json(CONFIG, {})
+    config["desktop_purpose"] = "widgets"
+    write_json(CONFIG, config); CONFIG.chmod(0o600)
+    save_state(**{key: canonical_mode(state[key]) for key in keys if key in state})
+
+
 def status():
     prefs = {**DEFAULTS, **read_json(PREFS, {})}
     state = read_json(STATE, {})
@@ -77,14 +96,15 @@ def status():
     kiosk = bool(service and service.get("running") and service.get("pid")
                  and process_identity(service["pid"]))
     mode = state.get("producer_mode", "desktop") if desktop else "kiosk" if kiosk else "stopped"
+    mode = canonical_mode(mode)
     error = state.get("last_error", "")
     if state.get("desktop_pid") and not desktop and not service and not error:
         error = "延伸桌面程序已結束，請查看日誌或重新啟動輸出。"
-    selected = state.get("resume_mode", "kiosk")
+    selected = canonical_mode(state.get("resume_mode", "kiosk"))
     system = {**SYSTEM_DEFAULTS, **state.get("system_state", {})}
     return {"ok": True, "mode": mode, "selected_mode": selected,
             "following_mac": any(system.values()) and selected != "stopped",
-            "system_state": system, **prefs, "last_error": error,
+            "system_state": system, **prefs, "last_error": localize(error),
             "launch_at_login": (Path.home() / "Library/LaunchAgents" / f"{MENU_LABEL}.plist").exists(),
             "logs_path": str(LOGS), "configured": bool(config.get("frame_cmd")),
             "source_cmd": config.get("frame_cmd", "")}
@@ -165,6 +185,7 @@ def blank_panel():
 
 
 def start_desktop(mode="desktop", remember=True):
+    mode = canonical_mode(mode)
     config = read_json(CONFIG, {})
     driver = paths(config)
     native = mode == "screensaver"
@@ -181,10 +202,7 @@ def start_desktop(mode="desktop", remember=True):
            "MSI_DESKTOP_FPS": str(prefs["desktop_fps"]), "MSI_VT_QUALITY": str(prefs["desktop_quality"]),
            "MSI_DESKTOP_TEST_WINDOW": "1" if mode == "desktop" and prefs["test_window"] else "0",
            "MSI_DESKTOP_MODE": "native", "MSI_VIRTUAL_COLOR_MODE": "system-default"}
-    if mode == "native-kiosk":
-        env.update(MSI_DESKTOP_PURPOSE="widgets", MSI_VT_QUALITY=str(prefs["kiosk_quality"]))
-    else:
-        env["MSI_DESKTOP_PURPOSE"] = "desktop"
+    env["MSI_DESKTOP_PURPOSE"] = ("widgets" if config.get("desktop_purpose") == "widgets" and mode == "desktop" else "desktop")
     if native:
         env.update(MSI_NATIVE_KIOSK_STYLE=mode, MSI_VT_QUALITY=str(prefs["kiosk_quality"]),
                    MSI_DESKTOP_FPS="30" if mode == "screensaver" else "1")
@@ -228,6 +246,7 @@ def start_desktop(mode="desktop", remember=True):
 
 
 def target_mode(selected, system):
+    selected = canonical_mode(selected)
     if selected not in MODES:
         raise RuntimeError("不支援的顯示模式。")
     if selected == "stopped" or system.get("screen_sleep") or system.get("system_sleep"):
@@ -237,6 +256,7 @@ def target_mode(selected, system):
 
 def activate_output(target, force=False):
     """Change the actual producer while retaining the user's selected mode."""
+    target = canonical_mode(target)
     current = status()["mode"]
     if current == target and not force:
         save_state(last_error="")
@@ -247,7 +267,7 @@ def activate_output(target, force=False):
             start_kiosk(remember=False)
         elif target == "desktop":
             start_desktop(remember=False)
-        elif target in ("native-kiosk", "screensaver"):
+        elif target == "screensaver":
             start_desktop(target, remember=False)
         elif target == "stopped":
             stop_desktop(); stop_kiosk(); save_state(mode="stopped", last_error="")
@@ -262,7 +282,7 @@ def activate_output(target, force=False):
 
 def reconcile_output(force=False):
     state = read_json(STATE, {})
-    selected = state.get("resume_mode", "kiosk")
+    selected = canonical_mode(state.get("resume_mode", "kiosk"))
     system = {**SYSTEM_DEFAULTS, **state.get("system_state", {})}
     activate_output(target_mode(selected, system), force=force)
 
@@ -341,10 +361,9 @@ def set_preference(action, value):
         return
     prefs[key] = selected
     write_json(PREFS, prefs)
-    if ((current == "desktop" and key.startswith("desktop_"))
-            or (current == "native-kiosk" and key == "desktop_fps")):
+    if current == "desktop" and key.startswith("desktop_"):
         activate_output(current, force=True)
-    elif current in ("native-kiosk", "screensaver", "kiosk") and key.startswith("kiosk_"):
+    elif current in ("screensaver", "kiosk") and key.startswith("kiosk_"):
         if current == "kiosk": stop_kiosk()
         activate_output(current, force=True)
 
@@ -385,6 +404,7 @@ def control_lock():
 def main(argv=None):
     argv = sys.argv[1:] if argv is None else argv
     action = argv[0] if argv else "status"
+    action = "desktop" if action == "native-kiosk" else action
     if getattr(sys, "frozen", False) and action in ("resume", "system-state"):
         config = read_json(CONFIG, {})
         if config.get("resources_path") != str(RESOURCES):
@@ -402,7 +422,8 @@ def main(argv=None):
         print(json.dumps(status(), ensure_ascii=False))
         return
     with control_lock():
-        if action in ("kiosk", "desktop", "native-kiosk", "screensaver", "stop"):
+        migrate_legacy_desktop()
+        if action in ("kiosk", "desktop", "screensaver", "stop"):
             selected = "stopped" if action == "stop" else action
             save_state(resume_mode=selected)
             reconcile_output(force=action == "stop")
@@ -448,5 +469,5 @@ if __name__ == "__main__":
         main()
     except Exception as error:
         message = str(error) if isinstance(error, RuntimeError) else "操作失敗，請查看日誌。"
-        print(json.dumps({"ok": False, "last_error": message}, ensure_ascii=False))
+        print(json.dumps({"ok": False, "last_error": localize(message)}, ensure_ascii=False))
         sys.exit(1)
