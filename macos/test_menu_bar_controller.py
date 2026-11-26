@@ -53,12 +53,47 @@ class ControllerTests(unittest.TestCase):
             with self.assertRaises(OSError): c.start_desktop()
         restore.assert_called_once_with(remember=False)
 
+    def test_desktop_without_usb_keeps_capture_and_reconnect_worker(self):
+        process = Mock(pid=43210)
+        process.poll.return_value = None
+        def spawn(*args, **kwargs):
+            kwargs["stdout"].write(b"Live desktop transport: bulk\nUSB reconnect pending\n")
+            kwargs["stdout"].flush()
+            return process
+        with patch.object(c, "stop_desktop"), patch.object(c, "stop_kiosk"), \
+             patch.object(c, "start_kiosk") as fallback, \
+             patch.object(c, "process_identity", return_value="capture waiting for USB"), \
+             patch.object(c.subprocess, "Popen", side_effect=spawn):
+            c.start_desktop()
+        fallback.assert_not_called()
+        self.assertEqual(c.read_json(c.STATE, {})["desktop_pid"], process.pid)
+        process.terminate.assert_not_called()
+
     def test_stop_failure_never_starts_second_usb_owner(self):
         with patch.object(c, "stop_desktop"), \
              patch.object(c, "stop_kiosk", side_effect=RuntimeError("still stopping")), \
              patch.object(c.subprocess, "Popen") as spawn:
             with self.assertRaises(RuntimeError): c.start_desktop()
         spawn.assert_not_called()
+
+    def test_only_capture_denial_is_reported_as_permission_failure(self):
+        for diagnostic, expected in (
+            (b"SCREEN_RECORDING_REQUIRED: allow capture\n", "螢幕錄製權限"),
+            (b"Virtual display API unavailable\n", "程序已結束"),
+        ):
+            with self.subTest(diagnostic=diagnostic):
+                process = Mock(pid=43210)
+                process.poll.return_value = 77
+                def spawn(*args, **kwargs):
+                    kwargs["stdout"].write(diagnostic)
+                    kwargs["stdout"].flush()
+                    return process
+                with patch.object(c, "stop_desktop"), patch.object(c, "stop_kiosk"), \
+                     patch.object(c, "start_kiosk"), \
+                     patch.object(c, "process_identity", return_value=None), \
+                     patch.object(c.subprocess, "Popen", side_effect=spawn):
+                    with self.assertRaisesRegex(RuntimeError, expected):
+                        c.start_desktop()
 
     def test_reused_pid_is_not_signalled(self):
         c.write_json(c.STATE, {"desktop_pid": 43210, "desktop_identity": "old process"})

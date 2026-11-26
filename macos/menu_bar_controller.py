@@ -219,13 +219,24 @@ def start_desktop(mode="desktop", remember=True):
         while time.monotonic() < until and process.poll() is None:
             with (LOGS / "desktop.log").open("rb") as stream:
                 stream.seek(offset)
-                started = b"Live desktop:" in stream.read(128 * 1024)
+                diagnostic = stream.read(128 * 1024)
+                # The driver reaches this point after receiving a valid capture,
+                # before connecting USB. A missing/replugged panel must not kill
+                # the virtual display or divert a desktop session into Kiosk.
+                started = b"Live desktop transport:" in diagnostic or b"Live desktop:" in diagnostic
             if started:
                 break
             time.sleep(0.1)
         identity = process_identity(process.pid)
         if not started or process.poll() is not None or not identity:
-            raise RuntimeError("延伸桌面啟動失敗；請確認螢幕錄製權限並查看日誌。")
+            # Read again after exit: the helper may have logged its reason
+            # between our last poll and process.poll().
+            with (LOGS / "desktop.log").open("rb") as stream:
+                stream.seek(offset)
+                recording_required = b"SCREEN_RECORDING_REQUIRED:" in stream.read(128 * 1024)
+            if recording_required:
+                raise RuntimeError("延伸桌面啟動失敗；請確認螢幕錄製權限並查看日誌。")
+            raise RuntimeError("延伸桌面程序已結束，請查看日誌或重新啟動輸出。")
     except Exception:
         if process and process.poll() is None:
             with contextlib.suppress(ProcessLookupError):

@@ -427,8 +427,9 @@ int main(int argc, const char *argv[]) {
             return 0;
         }
         if (!CGPreflightScreenCaptureAccess()) {
-            CGRequestScreenCaptureAccess();
-            fprintf(stderr, "SCREEN_RECORDING_REQUIRED: Enable MSI Xpander Desktop in System Settings > Privacy & Security > Screen & System Audio Recording, then run again.\n");
+            // Login/wake recovery must never prompt. The menu's explicit
+            // permission action requests access under the responsible app.
+            fprintf(stderr, "SCREEN_RECORDING_REQUIRED: Allow MSI Xpander in System Settings > Privacy & Security > Screen & System Audio Recording, then restart output from the menu.\n");
             return 77;
         }
         performanceActivity=[NSProcessInfo.processInfo beginActivityWithOptions:NSActivityUserInitiatedAllowingIdleSystemSleep|NSActivityLatencyCritical reason:@"Low-latency local Xpander display streaming"];

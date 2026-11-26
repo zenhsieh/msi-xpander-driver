@@ -104,6 +104,21 @@ identifier and that certificate, so code changes do not change its identity.
 Each nested helper keeps its own identifier; signing does not use `--deep`.
 No TCC database or system-wide trust configuration is changed.
 
+The standalone `macos/build-bridge.sh` uses the same persistent signing identity
+as the menu app. Login and wake recovery only check capture permission; they
+never call the system permission request API. Use Tools → Screen Recording
+to request access explicitly. Other startup failures are reported through logs
+instead of being mislabeled as capture permission failures.
+
+USB recovery discovers the current vendor HID interface directly through
+HIDAPI on each attempt, independently of libusb's bulk device discovery.
+Desktop startup is considered ready after the first valid capture, so an
+unplugged panel does not time out into Kiosk or destroy its reconnect worker.
+It selects by vendor/product and vendor usage, never by a saved port or address.
+After switching modes, the bulk interface is discovered again and its current
+bus/address is logged. If the panel is absent from macOS's USB device tree,
+check the data connection and macOS accessory approval before retrying.
+
 These are local development packages. For general public distribution, set
 `MSI_SIGN_IDENTITY` to an appropriate Developer ID Application identity and
 notarize/staple the disk image using the distributor's Apple credentials.

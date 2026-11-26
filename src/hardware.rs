@@ -213,13 +213,23 @@ fn hid_command(device: &HidDevice, path: &str, sequence: u32, body: Option<&str>
     bail!("No matching acknowledgement for HID command {path}")
 }
 
+fn panel_hid_api() -> Result<HidApi> {
+    let mut api = HidApi::new().context("Initialize HIDAPI")?;
+    api.reset_devices().context("Clear HID discovery snapshot")?;
+    api.add_devices(VID, PID_HID).context("Enumerate current Xpander HID interfaces")?;
+    Ok(api)
+}
+
 fn switch_to_extended(context: &Context, diagnostic: bool, prime: bool) -> Result<()> {
     if unique(context, PID_DISPLAY)?.is_some() { return Ok(()); }
-    ensure!(unique(context, PID_HID)?.is_some(), "MSI panel is not connected");
-    let api = HidApi::new().context("Initialize HIDAPI")?;
+    // HID mode is discovered through IOKit/HIDAPI, not gated on libusb's
+    // separate device cache. Re-enumerate on every reconnect: moving ports
+    // changes the registry path and USB address.
+    let api = panel_hid_api()?;
     let candidates: Vec<_> = api.device_list().filter(|d| {
         d.vendor_id() == VID && d.product_id() == PID_HID && d.usage_page() == 0xff00 && d.usage() == 1
     }).collect();
+    ensure!(!candidates.is_empty(), "MSI panel is not visible in HID or bulk mode; waiting for USB connection (any port)");
     ensure!(candidates.len() == 1, "Expected one vendor HID interface (usage page ff00, usage 1); found {}. Keyboard interfaces will not be opened.", candidates.len());
     let device = candidates[0].open_device(&api).context("Open MSI vendor HID interface")?;
     hid_command(&device, "conn", 100, None, true)?;
@@ -285,7 +295,7 @@ pub fn show_dashboard(path: Option<&Path>) -> Result<()> {
         ensure!(!processes.contains("\"msi viewxpander.exe\"") && !processes.contains("\"msi viewxpander service.exe\""),
             "Close MSI ViewXpander and its background service through the official controls before independent testing");
     }
-    let api = HidApi::new().context("Initialize HIDAPI")?;
+    let api = panel_hid_api()?;
     let candidates: Vec<_> = api.device_list().filter(|d| {
         d.vendor_id() == VID && d.product_id() == PID_HID && d.usage_page() == 0xff00 && d.usage() == 1
     }).collect();
@@ -308,7 +318,7 @@ impl Drop for DesktopBridge {
 }
 
 fn connect_dashboard() -> Result<HidDevice> {
-    let api=HidApi::new().context("Initialize HIDAPI")?;
+    let api=panel_hid_api()?;
     let candidates:Vec<_>=api.device_list().filter(|d|d.vendor_id()==VID && d.product_id()==PID_HID && d.usage_page()==0xff00 && d.usage()==1).collect();
     ensure!(candidates.len()==1,"Waiting for one Xpander Dashboard HID interface; found {}",candidates.len());
     let device=candidates[0].open_device(&api).context("Open Dashboard vendor HID")?;
@@ -530,6 +540,7 @@ impl Transport for UsbTransport {
 
 fn open_display(context: &Context) -> Result<UsbTransport> {
     let device = unique(context, PID_DISPLAY)?.context("Display-mode MSI device not found")?;
+    eprintln!("Opening Xpander bulk interface at current bus {}, address {}", device.bus_number(), device.address());
     let handle = device.open().context("Open MSI display device")?;
     let config = handle.active_configuration()?;
     if config == 0 { handle.set_active_configuration(1)?; }

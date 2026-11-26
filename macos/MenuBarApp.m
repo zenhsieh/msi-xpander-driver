@@ -531,7 +531,10 @@ static NSString *L(NSString *key) {
                 [self showError:error];
             }
         } else {
-            if (!ok && ![action isEqualToString:@"system-state"]) [self showControllerError:error action:action];
+            // Login recovery records errors in the menu, without interrupting
+            // every login with a modal permission/help dialog.
+            if (!ok && ![action isEqualToString:@"system-state"] && ![action isEqualToString:@"resume"])
+                [self showControllerError:error action:action];
             if (self.terminationPending) [self beginTerminationIfIdle];
             else [self flushSystemState];
         }
